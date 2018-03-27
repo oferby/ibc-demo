@@ -1,9 +1,3 @@
-function addHost(hostId) {
-    cy.add([
-        { group: "nodes", data: { id: hostId }, position: { x: 50, y: 50 }, classes: 'graphNode computeNode' }
-    ])
-
-}
 
 var cy = cytoscape({
     container: document.getElementById('cy'), // container to render in
@@ -12,7 +6,9 @@ var cy = cytoscape({
           selector: '.graphNode',
           style: {
             'background-fit': 'cover cover',
-            'background-color': 'white'
+            'background-color': 'white',
+            'label': 'data(id)',
+            'text-valign': 'bottom'
           }
         },
         {
@@ -74,7 +70,17 @@ function connect() {
     stompClient.connect({}, function (frame) {
         console.log('Connected: ' + frame);
         stompClient.subscribe('/topic/hint', function (hint) {
-            inputTextHint(JSON.parse(hint.body).hint);
+            var res = JSON.parse(hint.body);
+            if (res.status == 'DONE') {
+                sendIntent(res);
+            } else {
+                inputTextHint(res.hint);
+            }
+
+        });
+        stompClient.subscribe('/topic/graph', function (intent) {
+            var res = JSON.parse(intent.body);
+            addToGraph(res);
         });
     });
 }
@@ -87,9 +93,33 @@ function disconnect() {
     console.log("Disconnected");
 }
 
-function sendIntent() {
 
-    stompClient.send("/app/intent", {}, JSON.stringify({'text': $("#input").val()}));
+function addToGraph(graphNode) {
+    cy.add(graphNode);
+    cy.layout({name:'circle'}).run()
+}
+
+function getHint(isDone) {
+
+    var msg = null;
+    if (isDone) {
+        msg = JSON.stringify({
+                          'hint': $("#input").val(),
+                          'status': 'DONE'
+                      });
+    } else {
+        msg  = JSON.stringify({
+                           'hint': $("#input").val(),
+                           'status': 'HINT'
+                       });
+    }
+
+    stompClient.send("/app/getHint", {}, msg);
+}
+
+function sendIntent(intent){
+    console.log('Sending final intent')
+    stompClient.send("/app/intent", {}, JSON.stringify(intent));
 }
 
 function inputTextHint(inputText){
@@ -101,14 +131,10 @@ function inputTextHint(inputText){
 $(document).ready(function(){
     connect();
     $("#input").keyup(function(event){
-//            console.log(event);
-        console.log(event.which)
         if (event.which == 13) {
-            addHost('n2');
+            getHint(true);
         } else {
-//            inputTextHint($("#input").val())
-            sendIntent();
-
+            getHint(false);
         }
     })
 
