@@ -105,7 +105,7 @@ function getHint(isDone) {
     if (isDone) {
         msg = JSON.stringify({
                           'hint': $("#input").val(),
-                          'status': 'DONE'
+                          'status': 'ENTERED'
                       });
     } else {
         msg  = JSON.stringify({

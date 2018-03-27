@@ -1,9 +1,7 @@
 package com.huawei.ibc.model;
 
 import com.huawei.ibc.message.IntentMessage;
-import com.huawei.ibc.model.client.EdgeEntity;
-import com.huawei.ibc.model.client.GraphEntity;
-import com.huawei.ibc.model.client.Group;
+import com.huawei.ibc.model.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
@@ -13,44 +11,72 @@ import java.util.List;
 @Controller
 public class GraphController {
 
-    private int nodeNum = 0;
+    private int edgeNum = 0;
 
-    public List<GraphEntity> getGraphEntity(IntentMessage intentMessage){
+    public List<GraphEntity> getGraphEntity(IntentMessage intentMessage) {
 
-        List<GraphEntity>graphEntityList = new ArrayList<>();
+        if (intentMessage.getIntent().equals("buildDemo")) {
+            return buildDemo();
+        }
+
+        throw new RuntimeException("not supported!");
+    }
+
+    private List<GraphEntity> buildDemo() {
+
+        List<GraphEntity> graphEntityList = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
 
-            GraphEntity graphEntity = new GraphEntity();
-            String id = "node"+nodeNum++;
-            graphEntity.setId(id);
-            graphEntity.setClasses("graphNode computeNode");
-            graphEntity.setGroup(Group.NODES);
-
-            graphEntityList.add(graphEntity);
+            NodeEntity entity = this.createNodeEntity("node" + i, NodeType.COMPUTE_NODE);
+            graphEntityList.add(entity);
         }
 
-        EdgeEntity edge = new EdgeEntity();
-        edge.setGroup(Group.EDGES);
-        edge.setId("e1");
-        edge.setSource("node1");
-        edge.setTraget("node2");
-        graphEntityList.add(edge);
+        for (int i = 0; i < 4; i++) {
+            NodeEntity entity = this.createNodeEntity("sw" + i, NodeType.SWITCH);
+            graphEntityList.add(entity);
+        }
+
+        for (int i = 0; i < 4; i++) {
+            NodeEntity entity = this.createNodeEntity("r" + i, NodeType.ROUTER);
+            graphEntityList.add(entity);
+        }
+
+        graphEntityList.add(getEdgeEntity("node1", "sw1"));
+        graphEntityList.add(getEdgeEntity("node2", "sw1"));
+        graphEntityList.add(getEdgeEntity("node3", "sw1"));
+        graphEntityList.add(getEdgeEntity("r0", "sw0"));
+        graphEntityList.add(getEdgeEntity("r0", "sw1"));
+        graphEntityList.add(getEdgeEntity("r1", "sw2"));
+        graphEntityList.add(getEdgeEntity("r1", "sw3"));
+
 
         return graphEntityList;
+    }
+
+
+    private NodeEntity createNodeEntity(String id, NodeType type) {
+
+        NodeEntity graphEntity = new NodeEntity();
+        graphEntity.setId(id);
+        graphEntity.setType(type);
+        graphEntity.setGroup(Group.NODES);
+
+        return graphEntity;
 
     }
 
 
-//    private GraphEntity getNode() {
-//
-//    }
-//
-//    private GraphEntity getEdge() {
-//
-//
-//    }
+    private EdgeEntity getEdgeEntity(String sourceId, String targetId) {
 
+        String edgeId = "e" + edgeNum++;
+        EdgeEntity edge = new EdgeEntity();
+        edge.setGroup(Group.EDGES);
+        edge.setId(edgeId);
+        edge.setSource(sourceId);
+        edge.setTraget(targetId);
 
+        return edge;
+    }
 
 }

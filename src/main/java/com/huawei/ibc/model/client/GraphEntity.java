@@ -25,11 +25,11 @@ public class GraphEntity {
         data.put("id", id);
     }
 
-    public void addToData(String key, String value) {
+    void addToData(String key, String value) {
         data.put(key, value);
     }
 
-    public void setClasses(String classes) {
+    void setClasses(String classes) {
         this.classes = classes;
     }
 
