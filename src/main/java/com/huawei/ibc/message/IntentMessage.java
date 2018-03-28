@@ -8,7 +8,7 @@ public class IntentMessage {
     private String hint;
     private IntentStatus status;
     private String intent;
-    private Map<String,String>params;
+    private Map<String,String> params;
 
     public IntentMessage() {
     }
@@ -46,6 +46,15 @@ public class IntentMessage {
     public Map<String, String> getParams() {
         return params;
     }
+
+    public String getParamValue(String key){
+        if (params==null){
+            return null;
+        }
+
+        return params.get(key);
+    }
+
 
     public void setParams(Map<String, String> params) {
         this.params = params;

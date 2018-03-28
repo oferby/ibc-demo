@@ -1,7 +1,6 @@
 package com.huawei.ibc.web;
 
 import com.huawei.ibc.message.IntentMessage;
-import com.huawei.ibc.message.IntentRequest;
 import com.huawei.ibc.model.GraphController;
 import com.huawei.ibc.model.client.GraphEntity;
 import com.huawei.ibc.text.HintController;

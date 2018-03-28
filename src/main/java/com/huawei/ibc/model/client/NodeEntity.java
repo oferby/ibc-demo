@@ -1,5 +1,7 @@
 package com.huawei.ibc.model.client;
 
+import com.huawei.ibc.model.common.NodeType;
+
 public class NodeEntity extends GraphEntity{
 
     public void setType(NodeType type) {
@@ -26,11 +28,11 @@ public class NodeEntity extends GraphEntity{
             case FIREWALL:
                 this.setNodeClass("firewall");
                 break;
-            case INTERNET:
-                break;
             case COMPUTE_NODE:
                 this.setNodeClass("computeNode");
                 break;
+            case INTERNET:
+                this.setNodeClass("internet");
             default:
                 throw new RuntimeException();
         }

@@ -162,11 +162,12 @@ function inputTextHint(inputText){
 $(document).ready(function(){
     connect();
     $("#input").keyup(function(event){
+        console.log('key pressed: ' + event.which);
         if (event.which == 13) {
             getHint(true);
             $("#input").val('');
         } else if (event.which == 32) {
-            $("#input").val($('#hint').text());
+            $("#input").val($('#hint').text() + ' ');
         } else {
             getHint(false);
         }

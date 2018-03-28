@@ -1,5 +1,7 @@
 package com.huawei.ibc.model.db.node;
 
+import com.huawei.ibc.model.common.NodeType;
+
 import java.util.ArrayList;
 import java.util.List;
 

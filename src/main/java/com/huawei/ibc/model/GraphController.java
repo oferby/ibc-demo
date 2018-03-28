@@ -2,6 +2,12 @@ package com.huawei.ibc.model;
 
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.model.client.*;
+import com.huawei.ibc.model.common.NodeType;
+import com.huawei.ibc.model.db.DatabaseController;
+import com.huawei.ibc.model.db.node.AbstractDevice;
+import com.huawei.ibc.model.db.node.Router;
+import com.huawei.ibc.model.db.node.Switch;
+import com.huawei.ibc.model.db.node.VirtualMachine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
@@ -12,19 +18,65 @@ import java.util.List;
 @Controller
 public class GraphController {
 
-    private int edgeNum = 0;
+    private int numId = 0;
 
     @Autowired
     private SimpMessagingTemplate template;
 
+    @Autowired
+    private DatabaseController databaseController;
+
     public List<GraphEntity> getGraphEntity(IntentMessage intentMessage) {
 
-        if (intentMessage.getIntent().equals("buildDemo")) {
+        String intent = intentMessage.getIntent();
+        List<GraphEntity> graphEntityList = new ArrayList<>();
+        if (intent.equals("buildDemo")) {
             return buildDemo();
+        } else if (intent.equals("addVm")) {
+            graphEntityList.add(addVm(intentMessage));
+            return graphEntityList;
+        } else if (intent.equals("addRouter")) {
+            graphEntityList.add(addRouter(intentMessage));
+            return graphEntityList;
+        } else if (intent.equals("addSwitch")) {
+            graphEntityList.add(addSwitch(intentMessage));
+            return graphEntityList;
         }
-
+        
         throw new RuntimeException("not supported!");
     }
+
+    private GraphEntity addVm(IntentMessage intentMessage) {
+
+        VirtualMachine vm = databaseController.createVirtualMachine(this.getNodeName(intentMessage));
+        return this.createNodeEntity(vm);
+
+    }
+
+    private GraphEntity addRouter(IntentMessage intentMessage) {
+
+        Router router = databaseController.createRouter(this.getNodeName(intentMessage));
+        return this.createNodeEntity(router);
+
+    }
+
+    private GraphEntity addSwitch(IntentMessage intentMessage){
+
+        Switch aSwitch = databaseController.createSwitch(this.getNodeName(intentMessage));
+        return this.createNodeEntity(aSwitch);
+    }
+
+    private String getNodeName(IntentMessage intentMessage) {
+
+        String name = intentMessage.getParamValue("name");
+        if (name == null) {
+            name = "node" + numId++;
+        }
+
+        return name;
+
+    }
+
 
     private List<GraphEntity> buildDemo() {
 
@@ -59,6 +111,12 @@ public class GraphController {
     }
 
 
+    private NodeEntity createNodeEntity(AbstractDevice device){
+
+        return this.createNodeEntity(device.getId(), device.getNodeType());
+
+    }
+
     private NodeEntity createNodeEntity(String id, NodeType type) {
 
         NodeEntity graphEntity = new NodeEntity();
@@ -73,7 +131,7 @@ public class GraphController {
 
     private EdgeEntity getEdgeEntity(String sourceId, String targetId) {
 
-        String edgeId = "e" + edgeNum++;
+        String edgeId = sourceId + "-" + targetId;
         EdgeEntity edge = new EdgeEntity();
         edge.setGroup(Group.EDGES);
         edge.setId(edgeId);
@@ -81,10 +139,6 @@ public class GraphController {
         edge.setTraget(targetId);
 
         return edge;
-    }
-
-    public void doThis(){
-        this.template.send("", null);
     }
 
 }

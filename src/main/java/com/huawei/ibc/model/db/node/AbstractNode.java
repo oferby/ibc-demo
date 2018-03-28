@@ -1,5 +1,7 @@
 package com.huawei.ibc.model.db.node;
 
+import com.huawei.ibc.model.common.NodeType;
+
 public class AbstractNode {
 
     private String id;

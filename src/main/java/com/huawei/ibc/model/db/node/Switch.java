@@ -1,5 +1,6 @@
 package com.huawei.ibc.model.db.node;
 
+import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.protocol.EthernetPacket;
 
 public class Switch extends AbstractDevice implements ForwardingElement{

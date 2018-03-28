@@ -3,10 +3,10 @@ package com.huawei.ibc.model.db.node;
 import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.protocol.EthernetPacket;
 
-public class Firewall extends AbstractDevice implements ForwardingElement{
+public class Router extends AbstractDevice implements ForwardingElement{
 
-    public Firewall(String id) {
-        super(id, NodeType.FIREWALL);
+    public Router(String id) {
+        super(id, NodeType.ROUTER);
     }
 
     @Override
