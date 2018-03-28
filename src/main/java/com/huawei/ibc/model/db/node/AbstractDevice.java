@@ -1,6 +1,7 @@
 package com.huawei.ibc.model.db.node;
 
 import com.huawei.ibc.model.common.NodeType;
+import com.huawei.ibc.model.db.protocol.MACAddress;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,5 +31,13 @@ public class AbstractDevice extends AbstractNode{
 
         return connectedDeviceList;
 
+    }
+
+    public ForwardingPort addPort(MACAddress macAddress){
+
+        EthernetPort port = new EthernetPort(macAddress, this);
+        portList.add(port);
+
+        return port;
     }
 }

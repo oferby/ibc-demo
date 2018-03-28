@@ -22,6 +22,9 @@ public class SimpleHintController implements HintController {
         commandSet.add("add switch");
         commandSet.add("add router");
         commandSet.add("add firewall");
+        commandSet.add("connect");
+        commandSet.add("delete all");
+
 
     }
 
@@ -72,7 +75,7 @@ public class SimpleHintController implements HintController {
 
     private IntentMessage validateCompleteIntent(IntentMessage intentMessage) {
 
-        String command = intentMessage.getHint();
+        String command = intentMessage.getHint().trim();
         if (command.equals("build demo")) {
             intentMessage.setStatus(IntentStatus.DONE);
             intentMessage.setIntent("buildDemo");
@@ -83,21 +86,51 @@ public class SimpleHintController implements HintController {
             intentMessage.setIntent("clear");
             return intentMessage;
 
+        } else if (command.startsWith("delete all")) {
+            return this.getCreateNodeIntent(intentMessage, "deleteAll");
+
         } else if (command.startsWith("add vm")) {
             return this.getCreateNodeIntent(intentMessage, "addVm");
 
         } else if (command.startsWith("add router")) {
             return this.getCreateNodeIntent(intentMessage, "addRouter");
+
         } else if (command.startsWith("add switch")) {
             return this.getCreateNodeIntent(intentMessage, "addSwitch");
+
         } else if (command.startsWith("add firewall")) {
             return this.getCreateNodeIntent(intentMessage, "addFirewall");
+
+        } else if (command.startsWith("connect")) {
+            return this.createNodeConnectionIntent(intentMessage);
         }
 
         return intentMessage;
     }
 
-    private IntentMessage getCreateNodeIntent(IntentMessage intentMessage, String intent){
+    private IntentMessage createNodeConnectionIntent(IntentMessage intentMessage) {
+
+        String command = intentMessage.getHint();
+        String[] strings = command.split(" ");
+
+        if (strings.length == 3) {
+            intentMessage.addParam("target", strings[2]);
+        } else if (strings.length == 4) {
+            intentMessage.addParam("target", strings[3]);
+        } else {
+            throw new RuntimeException("invalid number of parameters");
+        }
+
+        intentMessage.setIntent("connectNodes");
+        intentMessage.addParam("source", strings[1]);
+        intentMessage.setStatus(IntentStatus.DONE);
+
+        return intentMessage;
+
+    }
+
+
+    private IntentMessage getCreateNodeIntent(IntentMessage intentMessage, String intent) {
         String command = intentMessage.getHint();
         intentMessage.setStatus(IntentStatus.DONE);
         intentMessage.setIntent(intent);
@@ -108,7 +141,6 @@ public class SimpleHintController implements HintController {
         return intentMessage;
 
     }
-
 
 
     private String getNodeName(String command) {

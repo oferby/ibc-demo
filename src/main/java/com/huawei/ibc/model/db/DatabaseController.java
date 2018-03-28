@@ -1,6 +1,7 @@
 package com.huawei.ibc.model.db;
 
 import com.huawei.ibc.model.db.node.*;
+import com.huawei.ibc.model.db.protocol.MACAddress;
 import org.springframework.stereotype.Controller;
 
 import java.util.HashMap;
@@ -10,6 +11,8 @@ import java.util.Map;
 public class DatabaseController {
 
     private Map<String, AbstractDevice> nodeMap = new HashMap<>();
+
+    private long lastAddress = 100;
 
     public DatabaseController() {
         String name = "Internet";
@@ -49,5 +52,29 @@ public class DatabaseController {
 
     }
 
+    public boolean createNodeConnection(String sourceId, String targetId){
+
+        AbstractDevice sourceDevice = nodeMap.get(sourceId);
+        if (sourceDevice==null)
+            return false;
+
+        AbstractDevice targetDevice = nodeMap.get(targetId);
+        if (targetDevice==null){
+            return false;
+        }
+
+        ForwardingPort port1 = sourceDevice.addPort(MACAddress.valueOf(lastAddress++));
+        ForwardingPort port2 = targetDevice.addPort(MACAddress.valueOf(lastAddress++));
+
+        port1.setConnectedPort(port2);
+        port2.setConnectedPort(port1);
+
+        return true;
+
+    }
+
+    public void deleteAll(){
+        nodeMap.clear();
+    }
 
 }

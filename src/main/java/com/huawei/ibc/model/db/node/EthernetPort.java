@@ -26,6 +26,11 @@ public class EthernetPort implements ForwardingPort{
     }
 
     @Override
+    public void setConnectedPort(ForwardingPort port) {
+        this.connectedTo = (EthernetPort) port;
+    }
+
+    @Override
     public ForwardingPort getConnectedPort() {
         return null;
     }

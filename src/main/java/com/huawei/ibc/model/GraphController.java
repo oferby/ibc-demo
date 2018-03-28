@@ -30,21 +30,51 @@ public class GraphController {
 
         String intent = intentMessage.getIntent();
         List<GraphEntity> graphEntityList = new ArrayList<>();
-        if (intent.equals("buildDemo")) {
-            return buildDemo();
-        } else if (intent.equals("addVm")) {
-            graphEntityList.add(addVm(intentMessage));
-            return graphEntityList;
-        } else if (intent.equals("addRouter")) {
-            graphEntityList.add(addRouter(intentMessage));
-            return graphEntityList;
-        } else if (intent.equals("addSwitch")) {
-            graphEntityList.add(addSwitch(intentMessage));
-            return graphEntityList;
+        switch (intent) {
+            case "buildDemo":
+                return buildDemo();
+            case "addVm":
+                graphEntityList.add(addVm(intentMessage));
+                return graphEntityList;
+            case "addRouter":
+                graphEntityList.add(addRouter(intentMessage));
+                return graphEntityList;
+            case "addSwitch":
+                graphEntityList.add(addSwitch(intentMessage));
+                return graphEntityList;
+            case "connectNodes":
+                graphEntityList.add(createNodeConnection(intentMessage));
+                return graphEntityList;
+            case "deleteAll":
+                this.deleteAll();
+                return null;
         }
-        
+
         throw new RuntimeException("not supported!");
     }
+
+    private void deleteAll(){
+
+        databaseController.deleteAll();
+
+
+    }
+
+
+    private EdgeEntity createNodeConnection(IntentMessage intentMessage) {
+
+        String source = intentMessage.getParamValue("source");
+        String target = intentMessage.getParamValue("target");
+        boolean nodeConnection = databaseController.createNodeConnection(source, target);
+
+        if (!nodeConnection){
+            throw new RuntimeException("could not connect " + source + " and " + target);
+        }
+
+        return this.getEdgeEntity(source, target);
+
+    }
+
 
     private GraphEntity addVm(IntentMessage intentMessage) {
 
@@ -60,7 +90,7 @@ public class GraphController {
 
     }
 
-    private GraphEntity addSwitch(IntentMessage intentMessage){
+    private GraphEntity addSwitch(IntentMessage intentMessage) {
 
         Switch aSwitch = databaseController.createSwitch(this.getNodeName(intentMessage));
         return this.createNodeEntity(aSwitch);
@@ -111,7 +141,7 @@ public class GraphController {
     }
 
 
-    private NodeEntity createNodeEntity(AbstractDevice device){
+    private NodeEntity createNodeEntity(AbstractDevice device) {
 
         return this.createNodeEntity(device.getId(), device.getNodeType());
 
