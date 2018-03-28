@@ -17,6 +17,7 @@ public class HintController {
 
          commandSet = new TreeSet<>();
          commandSet.add("build demo");
+         commandSet.add("clear");
 
     }
 
@@ -50,6 +51,10 @@ public class HintController {
         if (intentMessage.getHint().equals("build demo")){
             intentMessage.setStatus(IntentStatus.DONE);
             return buildIntent(intentMessage);
+        } else if (intentMessage.getHint().equals("clear")){
+            intentMessage.setStatus(IntentStatus.LOCAL);
+            intentMessage.setIntent("clear");
+            return intentMessage;
         }
 
         return intentMessage;

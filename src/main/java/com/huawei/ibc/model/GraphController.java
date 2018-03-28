@@ -3,6 +3,7 @@ package com.huawei.ibc.model;
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.model.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.util.ArrayList;
@@ -12,6 +13,9 @@ import java.util.List;
 public class GraphController {
 
     private int edgeNum = 0;
+
+    @Autowired
+    private SimpMessagingTemplate template;
 
     public List<GraphEntity> getGraphEntity(IntentMessage intentMessage) {
 
@@ -77,6 +81,10 @@ public class GraphController {
         edge.setTraget(targetId);
 
         return edge;
+    }
+
+    public void doThis(){
+        this.template.send("", null);
     }
 
 }

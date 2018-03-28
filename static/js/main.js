@@ -1,66 +1,78 @@
+function createGraph(){
+    var g = cytoscape({
+                container: document.getElementById('cy'), // container to render in
+                  style: [
+                    {
+                      selector: '.graphNode',
+                      style: {
+                        'background-fit': 'cover cover',
+                        'background-color': 'white',
+                        'label': 'data(id)',
+                        'text-valign': 'bottom'
+                      }
+                    },
+                    {
+                      selector: '.computeNode',
+                      style: {
+                        'background-image': 'images/pc.png'
+                      }
+                    },
+                    {
+                      selector: '.loadBalancer',
+                      style: {
+                        'background-image': 'images/lb.png'
+                      }
+                    },
+                    {
+                      selector: '.router',
+                      style: {
+                        'background-image': 'images/router.png'
+                      }
+                    },
+                    {
+                        selector: '.switch',
+                        style: {
+                            'background-image': 'images/switch.png'
+                        }
+                    },
+                    {
+                        selector: '.acl',
+                        style: {
+                            'background-image': 'images/acl.png'
+                        }
+                    },
+                    {
+                      selector: '.internet',
+                      style: {
+                        'background-image': 'images/world.png'
+                        }
+                    },
+                    {
+                      selector: '.subnet',
+                      style: {
+                        'background-image': 'images/cloud.png'
+                      }
+                    },
+                    {
+                      selector: '.gateway',
+                      style: {
+                        'background-image': 'images/gateway.png'
+                      }
+                    },
+                    {
+                      selector: '.application',
+                      style: {
+                        'background-image': 'images/application.png'
+                      }
+                    }
+                  ]
+            });
 
-var cy = cytoscape({
-    container: document.getElementById('cy'), // container to render in
-      style: [
-        {
-          selector: '.graphNode',
-          style: {
-            'background-fit': 'cover cover',
-            'background-color': 'white',
-            'label': 'data(id)',
-            'text-valign': 'bottom'
-          }
-        },
-        {
-          selector: '.computeNode',
-          style: {
-            'background-image': 'images/pc.png'
-          }
-        },
-        {
-          selector: '.loadBalancer',
-          style: {
-            'background-image': 'images/lb.png'
-          }
-        },
-        {
-          selector: '.router',
-          style: {
-            'background-image': 'images/router.png'
-          }
-        },
-        {
-            selector: '.switch',
-            style: {
-                'background-image': 'images/switch.png'
-            }
-        },
-        {
-            selector: '.acl',
-            style: {
-                'background-image': 'images/acl.png'
-            }
-        },
-        {
-          selector: '.internet',
-          style: {
-            'background-image': 'images/world.png'
-            }
-        },
-        {
-          selector: '.subnet',
-          style: {
-            'background-image': 'images/cloud.png'
-          }
-        },
-        {
-          selector: '.gateway',
-          style: {
-            'background-image': 'images/gateway.png'
-          }
-        }
-      ]
-});
+    return g;
+
+}
+
+var cy = createGraph();
 
 var stompClient = null;
 
@@ -73,6 +85,8 @@ function connect() {
             var res = JSON.parse(hint.body);
             if (res.status == 'DONE') {
                 sendIntent(res);
+            } else if (res.status == 'LOCAL') {
+                doLocal(res.intent);
             } else {
                 inputTextHint(res.hint);
             }
@@ -83,6 +97,23 @@ function connect() {
             addToGraph(res);
         });
     });
+}
+
+function doLocal(intent) {
+
+    switch (intent) {
+
+        case "clear":
+            cy.destroy()
+            console.log("graph destroyed");
+            cy = createGraph();
+            break;
+
+        default:
+            console.log('unknown local intent');
+            break;
+    }
+
 }
 
 function disconnect() {
@@ -133,6 +164,9 @@ $(document).ready(function(){
     $("#input").keyup(function(event){
         if (event.which == 13) {
             getHint(true);
+            $("#input").val('');
+        } else if (event.which == 32) {
+            $("#input").val($('#hint').text());
         } else {
             getHint(false);
         }

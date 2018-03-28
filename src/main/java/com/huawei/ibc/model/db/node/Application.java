@@ -1,0 +1,39 @@
+package com.huawei.ibc.model.db.node;
+
+import com.huawei.ibc.model.db.protocol.EthernetPacket;
+
+public class Application extends AbstractNode implements ForwardingElement {
+
+    private Short listenOnPort;
+    private VirtualMachine host;
+
+    public Application(String id) {
+        super(id, NodeType.APPLICATION);
+    }
+
+    @Override
+    public void rx(EthernetPacket packet) {
+
+    }
+
+    @Override
+    public void tx(EthernetPacket packet) {
+        host.rx(packet);
+    }
+
+    public Short getListenOnPort() {
+        return listenOnPort;
+    }
+
+    public void setListenOnPort(Short listenOnPort) {
+        this.listenOnPort = listenOnPort;
+    }
+
+    public VirtualMachine getHost() {
+        return host;
+    }
+
+    public void setHost(VirtualMachine host) {
+        this.host = host;
+    }
+}
