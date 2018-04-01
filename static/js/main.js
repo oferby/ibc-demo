@@ -164,6 +164,7 @@ $(document).ready(function(){
     $("#input").keyup(function(event){
         console.log('key pressed: ' + event.which);
         if (event.which == 13) {
+            $('#hint').text('') ;
             getHint(true);
             $("#input").val('');
         } else if (event.which == 32) {

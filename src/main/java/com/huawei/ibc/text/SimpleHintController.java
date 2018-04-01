@@ -5,13 +5,15 @@ import com.huawei.ibc.message.IntentStatus;
 import javafx.collections.transformation.SortedList;
 import org.springframework.stereotype.Controller;
 
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Controller
 public class SimpleHintController implements HintController {
 
     private Set<String> commandSet;
+    private Map<Pattern, String> patternMap = new HashMap<>();
 
     public SimpleHintController() {
 
@@ -24,6 +26,15 @@ public class SimpleHintController implements HintController {
         commandSet.add("add firewall");
         commandSet.add("connect");
         commandSet.add("delete all");
+
+        patternMap.put(Pattern.compile("add\\s+vm.+"), "addVm");
+        patternMap.put(Pattern.compile("add\\s+switch.+"), "addSwitch");
+        patternMap.put(Pattern.compile("add\\s+router.+"), "addRouter");
+        patternMap.put(Pattern.compile("add\\s+firewall.+"), "addFirewall");
+        patternMap.put(Pattern.compile("build\\s+demo.+"), "buildDemo");
+        patternMap.put(Pattern.compile("clear.+"), "clear");
+        patternMap.put(Pattern.compile("delete\\s+all.+"), "deleteAll");
+        patternMap.put(Pattern.compile("connect.+"), "connect");
 
 
     }
@@ -76,33 +87,47 @@ public class SimpleHintController implements HintController {
     private IntentMessage validateCompleteIntent(IntentMessage intentMessage) {
 
         String command = intentMessage.getHint().trim();
-        if (command.equals("build demo")) {
-            intentMessage.setStatus(IntentStatus.DONE);
-            intentMessage.setIntent("buildDemo");
+
+        String intent = null;
+        for (Pattern p : patternMap.keySet()) {
+            Matcher m = p.matcher(command);
+            if (m.matches()) {
+                intent = patternMap.get(p);
+                break;
+            }
+
+        }
+
+        if (intent==null){
             return intentMessage;
+        }
 
-        } else if (command.equals("clear")) {
-            intentMessage.setStatus(IntentStatus.LOCAL);
-            intentMessage.setIntent("clear");
-            return intentMessage;
+        switch (intent) {
+            case "buildDemo":
+                intentMessage.setStatus(IntentStatus.DONE);
+                intentMessage.setIntent("buildDemo");
+                break;
+            case "clear":
+                intentMessage.setStatus(IntentStatus.LOCAL);
+                intentMessage.setIntent("clear");
+                break;
+            case "connect":
+                return this.createNodeConnectionIntent(intentMessage);
 
-        } else if (command.startsWith("delete all")) {
-            return this.getCreateNodeIntent(intentMessage, "deleteAll");
+            case "deleteAll":
+                return this.getCreateNodeIntent(intentMessage, "deleteAll");
 
-        } else if (command.startsWith("add vm")) {
-            return this.getCreateNodeIntent(intentMessage, "addVm");
+            case "addVm":
+                return this.getCreateNodeIntent(intentMessage, "addVm");
 
-        } else if (command.startsWith("add router")) {
-            return this.getCreateNodeIntent(intentMessage, "addRouter");
+            case "addRouter":
+                return this.getCreateNodeIntent(intentMessage, "addRouter");
 
-        } else if (command.startsWith("add switch")) {
-            return this.getCreateNodeIntent(intentMessage, "addSwitch");
+            case "addSwitch":
+                return this.getCreateNodeIntent(intentMessage, "addSwitch");
 
-        } else if (command.startsWith("add firewall")) {
-            return this.getCreateNodeIntent(intentMessage, "addFirewall");
-
-        } else if (command.startsWith("connect")) {
-            return this.createNodeConnectionIntent(intentMessage);
+            case "addFirewall":
+                return this.getCreateNodeIntent(intentMessage, "addFirewall");
         }
 
         return intentMessage;
@@ -112,6 +137,10 @@ public class SimpleHintController implements HintController {
 
         String command = intentMessage.getHint();
         String[] strings = command.split(" ");
+
+        List<String> list = new ArrayList<String>(Arrays.asList(strings));
+        list.removeAll(Collections.singletonList(""));
+        strings = list.toArray(strings);
 
         if (strings.length == 3) {
             intentMessage.addParam("target", strings[2]);
@@ -145,6 +174,11 @@ public class SimpleHintController implements HintController {
 
     private String getNodeName(String command) {
         String[] strings = command.split(" ");
+
+        List<String> list = new ArrayList<String>(Arrays.asList(strings));
+        list.removeAll(Collections.singletonList(""));
+        strings = list.toArray(strings);
+
         if (strings.length == 2) {
             return null;
         }
