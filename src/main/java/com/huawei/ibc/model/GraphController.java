@@ -1,11 +1,13 @@
 package com.huawei.ibc.model;
 
 import com.huawei.ibc.message.IntentMessage;
+import com.huawei.ibc.message.IntentStatus;
 import com.huawei.ibc.model.client.*;
 import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.DatabaseController;
 import com.huawei.ibc.model.db.node.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -41,20 +43,38 @@ public class GraphController {
             case "connectNodes":
                 graphEntityList.add(createNodeConnection(intentMessage));
                 return graphEntityList;
+            case "disconnectNodes":
+                this.disconnectNodes(intentMessage);
+                return null;
             case "deleteAll":
                 this.deleteAll();
                 return null;
             case "showAll":
                 return showAll(graphEntityList);
+            case "addFirewall":
+                graphEntityList.add(addFirewall(intentMessage));
+                return graphEntityList;
         }
 
         throw new RuntimeException("not supported!");
     }
 
+    private void disconnectNodes(IntentMessage intentMessage) {
+
+        String sourceId = intentMessage.getParamValue("source");
+        String targetId = intentMessage.getParamValue("target");
+        databaseController.deleteNodeConnection(sourceId, targetId);
+
+        intentMessage.setStatus(IntentStatus.LOCAL);
+        String id = this.getEdgeEntity(sourceId, targetId).getId();
+        intentMessage.addParam("id", id);
+        template.convertAndSend("/topic/hint", intentMessage);
+
+    }
+
     private void deleteAll() {
 
         databaseController.deleteAll();
-
 
     }
 
@@ -115,6 +135,12 @@ public class GraphController {
         Switch aSwitch = databaseController.createSwitch(this.getNodeName(intentMessage));
         return this.createNodeEntity(aSwitch);
     }
+
+    private GraphEntity addFirewall(IntentMessage intentMessage) {
+        Firewall firewall = databaseController.createFirewall(this.getNodeName(intentMessage));
+        return this.createNodeEntity(firewall);
+    }
+
 
     private String getNodeName(IntentMessage intentMessage) {
 
@@ -180,7 +206,6 @@ public class GraphController {
 
 
     private EdgeEntity getEdgeEntity(String sourceId, String targetId) {
-
 
         EdgeEntity edge = new EdgeEntity();
         edge.setGroup(Group.EDGES);

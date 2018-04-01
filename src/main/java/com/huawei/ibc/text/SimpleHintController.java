@@ -21,23 +21,32 @@ public class SimpleHintController implements HintController {
         commandSet.add("build demo");
         commandSet.add("clear");
         commandSet.add("add vm");
+        commandSet.add("create vm");
         commandSet.add("add switch");
+        commandSet.add("create switch");
         commandSet.add("add router");
+        commandSet.add("create router");
         commandSet.add("add firewall");
+        commandSet.add("create firewall");
         commandSet.add("connect");
+        commandSet.add("disconnect");
         commandSet.add("delete all");
         commandSet.add("show all");
 
         patternMap.put(Pattern.compile("add\\s+vm.+"), "addVm");
+        patternMap.put(Pattern.compile("create\\s+vm.+"), "addVm");
         patternMap.put(Pattern.compile("add\\s+switch.+"), "addSwitch");
+        patternMap.put(Pattern.compile("create\\s+switch.+"), "addSwitch");
         patternMap.put(Pattern.compile("add\\s+router.+"), "addRouter");
+        patternMap.put(Pattern.compile("create\\s+router.+"), "addRouter");
         patternMap.put(Pattern.compile("add\\s+firewall.+"), "addFirewall");
+        patternMap.put(Pattern.compile("create\\s+firewall.+"), "addFirewall");
         patternMap.put(Pattern.compile("build\\s+demo\\s*"), "buildDemo");
         patternMap.put(Pattern.compile("clear\\s*"), "clear");
         patternMap.put(Pattern.compile("delete\\s+all\\s*"), "deleteAll");
         patternMap.put(Pattern.compile("connect.+"), "connect");
+        patternMap.put(Pattern.compile("disconnect.+"), "disconnect");
         patternMap.put(Pattern.compile("show\\s+all\\s*"), "showAll");
-
 
     }
 
@@ -100,7 +109,7 @@ public class SimpleHintController implements HintController {
 
         }
 
-        if (intent==null){
+        if (intent == null) {
             return intentMessage;
         }
 
@@ -115,19 +124,16 @@ public class SimpleHintController implements HintController {
                 break;
             case "connect":
                 return this.createNodeConnectionIntent(intentMessage);
-
+            case "disconnect":
+                return this.removeNodeConnectionIntent(intentMessage);
             case "deleteAll":
                 return this.getCreateNodeIntent(intentMessage, "deleteAll");
-
             case "addVm":
                 return this.getCreateNodeIntent(intentMessage, "addVm");
-
             case "addRouter":
                 return this.getCreateNodeIntent(intentMessage, "addRouter");
-
             case "addSwitch":
                 return this.getCreateNodeIntent(intentMessage, "addSwitch");
-
             case "addFirewall":
                 return this.getCreateNodeIntent(intentMessage, "addFirewall");
             case "showAll":
@@ -138,6 +144,32 @@ public class SimpleHintController implements HintController {
 
         return intentMessage;
     }
+
+    private IntentMessage removeNodeConnectionIntent(IntentMessage intentMessage) {
+
+        String command = intentMessage.getHint();
+        String[] strings = command.split(" ");
+
+        List<String> list = new ArrayList<String>(Arrays.asList(strings));
+        list.removeAll(Collections.singletonList(""));
+        strings = list.toArray(strings);
+
+        if (strings.length == 3) {
+            intentMessage.addParam("target", strings[2]);
+        } else if (strings.length == 4) {
+            intentMessage.addParam("target", strings[3]);
+        } else {
+            throw new RuntimeException("invalid number of parameters");
+        }
+
+        intentMessage.setIntent("disconnectNodes");
+        intentMessage.addParam("source", strings[1]);
+        intentMessage.setStatus(IntentStatus.DONE);
+
+        return intentMessage;
+
+    }
+
 
     private IntentMessage createNodeConnectionIntent(IntentMessage intentMessage) {
 

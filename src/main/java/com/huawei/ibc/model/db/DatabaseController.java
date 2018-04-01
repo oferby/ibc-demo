@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 @Controller
@@ -16,6 +17,12 @@ public class DatabaseController {
     private long lastAddress = 100;
 
     public DatabaseController() {
+        this.addInternetNode();
+    }
+
+
+    private void addInternetNode(){
+
         String name = "Internet";
         Internet internet = new Internet(name);
         nodeMap.put(name, internet);
@@ -76,8 +83,29 @@ public class DatabaseController {
 
     public void deleteAll(){
         nodeMap.clear();
+        this.addInternetNode();
     }
 
+    public void deleteNodeConnection(String sourceId, String targetId){
+
+        AbstractDevice sourceDevice = nodeMap.get(sourceId);
+        if (sourceDevice==null)
+            throw new RuntimeException("source id not found");
+
+        AbstractDevice targetDevice = nodeMap.get(targetId);
+        if (targetDevice==null){
+            throw new RuntimeException("target id not found");
+        }
+
+        for (ForwardingPort port : sourceDevice.getPortList()) {
+            if (port.getConnectedPort().getPortDevice().getId().equals(targetId)) {
+                sourceDevice.deletePort(port);
+                targetDevice.deletePort(port.getConnectedPort());
+                break;
+            }
+        }
+
+    }
 
     public Collection<AbstractDevice> getAllDevices(){
         return nodeMap.values();

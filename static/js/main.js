@@ -64,6 +64,12 @@ function createGraph(){
                       style: {
                         'background-image': 'images/application.png'
                       }
+                    },
+                    {
+                      selector: '.firewall',
+                      style: {
+                        'background-image': 'images/firewall.png'
+                      }
                     }
                   ]
             });
@@ -86,7 +92,7 @@ function connect() {
             if (res.status == 'DONE') {
                 sendIntent(res);
             } else if (res.status == 'LOCAL') {
-                doLocal(res.intent);
+                doLocal(res);
             } else {
                 inputTextHint(res.hint);
             }
@@ -99,14 +105,18 @@ function connect() {
     });
 }
 
-function doLocal(intent) {
+function doLocal(res) {
 
-    switch (intent) {
+    switch (res.intent) {
 
         case "clear":
             cy.destroy()
             console.log("graph destroyed");
             cy = createGraph();
+            break;
+         case "disconnectNodes":
+            var edgeId = "#" + res.params.id;
+            cy.$(edgeId).remove();
             break;
 
         default:

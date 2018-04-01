@@ -4,6 +4,7 @@ import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.protocol.MACAddress;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class AbstractDevice extends AbstractNode{
@@ -39,5 +40,11 @@ public class AbstractDevice extends AbstractNode{
         portList.add(port);
 
         return port;
+    }
+
+    public void deletePort(ForwardingPort port){
+
+        portList.removeIf(next -> next == port);
+
     }
 }

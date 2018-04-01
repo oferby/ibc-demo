@@ -24,8 +24,13 @@ public class GraphEntity {
     public String getDataEntry(String key){
         return data.get(key);
     }
+
     public void setId(String id) {
         data.put("id", id);
+    }
+
+    public String getId(){
+        return data.get("id");
     }
 
     void addToData(String key, String value) {
