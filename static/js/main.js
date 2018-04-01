@@ -137,7 +137,8 @@ function disconnect() {
 
 function addToGraph(graphNode) {
     cy.add(graphNode);
-    cy.layout({name:'circle'}).run()
+    cy.layout({name:'breadthfirst'}).run()
+//    cy.layout({name:'circle'}).run()
 }
 
 function getHint(isDone) {

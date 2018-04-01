@@ -47,7 +47,7 @@ public class GraphController {
                 this.disconnectNodes(intentMessage);
                 return null;
             case "deleteAll":
-                this.deleteAll();
+                this.deleteAll(intentMessage);
                 return null;
             case "showAll":
                 return showAll(graphEntityList);
@@ -72,9 +72,13 @@ public class GraphController {
 
     }
 
-    private void deleteAll() {
+    private void deleteAll(IntentMessage intentMessage) {
 
         databaseController.deleteAll();
+        intentMessage.setStatus(IntentStatus.LOCAL);
+        intentMessage.setIntent("clear");
+
+        template.convertAndSend("/topic/hint", intentMessage);
 
     }
 
@@ -153,39 +157,44 @@ public class GraphController {
 
     }
 
-
     private List<GraphEntity> buildDemo() {
 
         List<GraphEntity> graphEntityList = new ArrayList<>();
+        List<Router> routerList = new ArrayList<>();
+        for (int h = 0; h < 5; h++) {
 
-        for (int i = 0; i < 10; i++) {
+            Router router = databaseController.createRouter("r" + h);
+            graphEntityList.add(this.createNodeEntity(router));
+            routerList.add(router);
 
-            NodeEntity entity = this.createNodeEntity("node" + i, NodeType.COMPUTE_NODE);
-            graphEntityList.add(entity);
+            for (int i = 0; i < 3; i++) {
+                Switch sw = databaseController.createSwitch("sw" + (i + h * 10));
+                graphEntityList.add(this.createNodeEntity(sw));
+                databaseController.createNodeConnection(router.getId(),sw.getId());
+                graphEntityList.add(this.getEdgeEntity(router.getId(),sw.getId()));
+
+                for (int j = 0; j < 5; j++) {
+                    VirtualMachine vm = databaseController.createVirtualMachine("vm" + (i * 10 + j + h * 100));
+                    graphEntityList.add(this.createNodeEntity(vm));
+                    databaseController.createNodeConnection(sw.getId(), vm.getId());
+                    graphEntityList.add(this.getEdgeEntity(sw.getId(), vm.getId()));
+                }
+            }
         }
 
-        for (int i = 0; i < 4; i++) {
-            NodeEntity entity = this.createNodeEntity("sw" + i, NodeType.SWITCH);
-            graphEntityList.add(entity);
+        Set<EdgeEntity>edgeEntitySet = new HashSet<>();
+        for (Router router : routerList) {
+            for (Router router1 : routerList) {
+                if (!router.getId().equals(router1.getId())) {
+                    databaseController.createNodeConnection(router1.getId(),router.getId());
+                    edgeEntitySet.add(this.getEdgeEntity(router1.getId(),router.getId()));
+                }
+            }
         }
-
-        for (int i = 0; i < 4; i++) {
-            NodeEntity entity = this.createNodeEntity("r" + i, NodeType.ROUTER);
-            graphEntityList.add(entity);
-        }
-
-        graphEntityList.add(getEdgeEntity("node1", "sw1"));
-        graphEntityList.add(getEdgeEntity("node2", "sw1"));
-        graphEntityList.add(getEdgeEntity("node3", "sw1"));
-        graphEntityList.add(getEdgeEntity("r0", "sw0"));
-        graphEntityList.add(getEdgeEntity("r0", "sw1"));
-        graphEntityList.add(getEdgeEntity("r1", "sw2"));
-        graphEntityList.add(getEdgeEntity("r1", "sw3"));
-
+        graphEntityList.addAll(edgeEntitySet);
 
         return graphEntityList;
     }
-
 
     private NodeEntity createNodeEntity(AbstractDevice device) {
 
