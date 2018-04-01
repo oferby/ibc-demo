@@ -33,6 +33,8 @@ public class NodeEntity extends GraphEntity{
                 break;
             case INTERNET:
                 this.setNodeClass("internet");
+                break;
+
             default:
                 throw new RuntimeException();
         }

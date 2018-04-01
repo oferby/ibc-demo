@@ -32,27 +32,16 @@ public class EthernetPort implements ForwardingPort{
 
     @Override
     public ForwardingPort getConnectedPort() {
-        return null;
+        return this.connectedTo;
     }
 
     @Override
     public AbstractDevice getPortDevice() {
-        return null;
-    }
-
-    public EthernetPort getConnectedTo() {
-        return connectedTo;
+        return device;
     }
 
     public MACAddress getMacAddress() {
         return macAddress;
     }
 
-    public AbstractDevice getDevice() {
-        return device;
-    }
-
-    public void setConnectedTo(EthernetPort connectedTo) {
-        this.connectedTo = connectedTo;
-    }
 }

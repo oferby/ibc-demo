@@ -26,15 +26,17 @@ public class SimpleHintController implements HintController {
         commandSet.add("add firewall");
         commandSet.add("connect");
         commandSet.add("delete all");
+        commandSet.add("show all");
 
         patternMap.put(Pattern.compile("add\\s+vm.+"), "addVm");
         patternMap.put(Pattern.compile("add\\s+switch.+"), "addSwitch");
         patternMap.put(Pattern.compile("add\\s+router.+"), "addRouter");
         patternMap.put(Pattern.compile("add\\s+firewall.+"), "addFirewall");
-        patternMap.put(Pattern.compile("build\\s+demo.+"), "buildDemo");
-        patternMap.put(Pattern.compile("clear.+"), "clear");
-        patternMap.put(Pattern.compile("delete\\s+all.+"), "deleteAll");
+        patternMap.put(Pattern.compile("build\\s+demo\\s*"), "buildDemo");
+        patternMap.put(Pattern.compile("clear\\s*"), "clear");
+        patternMap.put(Pattern.compile("delete\\s+all\\s*"), "deleteAll");
         patternMap.put(Pattern.compile("connect.+"), "connect");
+        patternMap.put(Pattern.compile("show\\s+all\\s*"), "showAll");
 
 
     }
@@ -128,6 +130,10 @@ public class SimpleHintController implements HintController {
 
             case "addFirewall":
                 return this.getCreateNodeIntent(intentMessage, "addFirewall");
+            case "showAll":
+                intentMessage.setStatus(IntentStatus.DONE);
+                intentMessage.setIntent("showAll");
+                break;
         }
 
         return intentMessage;

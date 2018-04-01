@@ -4,6 +4,7 @@ import com.huawei.ibc.model.db.node.*;
 import com.huawei.ibc.model.db.protocol.MACAddress;
 import org.springframework.stereotype.Controller;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -77,4 +78,8 @@ public class DatabaseController {
         nodeMap.clear();
     }
 
+
+    public Collection<AbstractDevice> getAllDevices(){
+        return nodeMap.values();
+    }
 }

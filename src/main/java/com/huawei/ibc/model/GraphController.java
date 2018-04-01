@@ -4,16 +4,12 @@ import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.model.client.*;
 import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.DatabaseController;
-import com.huawei.ibc.model.db.node.AbstractDevice;
-import com.huawei.ibc.model.db.node.Router;
-import com.huawei.ibc.model.db.node.Switch;
-import com.huawei.ibc.model.db.node.VirtualMachine;
+import com.huawei.ibc.model.db.node.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Controller
 public class GraphController {
@@ -48,16 +44,40 @@ public class GraphController {
             case "deleteAll":
                 this.deleteAll();
                 return null;
+            case "showAll":
+                return showAll(graphEntityList);
         }
 
         throw new RuntimeException("not supported!");
     }
 
-    private void deleteAll(){
+    private void deleteAll() {
 
         databaseController.deleteAll();
 
 
+    }
+
+    private List<GraphEntity> showAll(List<GraphEntity> graphEntityList) {
+
+        Collection<AbstractDevice> devices = databaseController.getAllDevices();
+        Set<EdgeEntity> edgeEntitySet = new HashSet<>();
+
+        for (AbstractDevice device : devices) {
+            graphEntityList.add(this.createNodeEntity(device));
+
+            for (ForwardingPort port : device.getPortList()) {
+
+                edgeEntitySet.add(getEdgeEntity(device.getId(),
+                        port.getConnectedPort().getPortDevice().getId()));
+
+            }
+
+        }
+
+        graphEntityList.addAll(edgeEntitySet);
+
+        return graphEntityList;
     }
 
 
@@ -67,7 +87,7 @@ public class GraphController {
         String target = intentMessage.getParamValue("target");
         boolean nodeConnection = databaseController.createNodeConnection(source, target);
 
-        if (!nodeConnection){
+        if (!nodeConnection) {
             throw new RuntimeException("could not connect " + source + " and " + target);
         }
 
@@ -161,12 +181,21 @@ public class GraphController {
 
     private EdgeEntity getEdgeEntity(String sourceId, String targetId) {
 
-        String edgeId = sourceId + "-" + targetId;
+
         EdgeEntity edge = new EdgeEntity();
         edge.setGroup(Group.EDGES);
-        edge.setId(edgeId);
+
+        if (sourceId.compareTo(targetId) > 0) {
+            String temp = sourceId;
+            sourceId = targetId;
+            targetId = temp;
+        }
+
         edge.setSource(sourceId);
         edge.setTraget(targetId);
+
+        String edgeId = sourceId + "-" + targetId;
+        edge.setId(edgeId);
 
         return edge;
     }
