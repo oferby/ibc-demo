@@ -84,7 +84,7 @@ public class HintFinder {
     @Test
     public void extractWord() {
 
-        String s = "add application app1 listen on port 3306";
+        String s = "add application app1 listen on port 3306 host host1";
 
         Pattern p = Pattern.compile("(add|create)\\s+application\\s+([a-z0-9]+).*port\\s+([0-9]+)");
         Matcher m = p.matcher(s);
@@ -99,6 +99,12 @@ public class HintFinder {
 
         assert portNumber != null;
 
+        p = Pattern.compile(".*(host|vm)\\s+([a-z0-9]+).*");
+        m = p.matcher(s);
+        boolean found = m.find();
+
+        String hostName = m.group(2);
+        assert found;
 
     }
 

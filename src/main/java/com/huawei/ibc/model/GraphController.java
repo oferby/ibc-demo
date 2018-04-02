@@ -67,7 +67,7 @@ public class GraphController {
                 graphEntityList.addAll(this.showAllPolicies(intentMessage));
                 return graphEntityList;
             case "addApplication":
-                graphEntityList.add(this.createApplication(intentMessage));
+                graphEntityList.addAll(this.createApplication(intentMessage));
                 return graphEntityList;
         }
 
@@ -97,7 +97,7 @@ public class GraphController {
             throw new RuntimeException("invalid from node id");
         policy.setFrom(fromNode);
         graphEntityList.add(this.createGraphNode(fromNode));
-        graphEntityList.add(this.createGraphEdge(fromNode.getId(),policy.getId()));
+        graphEntityList.add(this.createGraphEdge(fromNode.getId(), policy.getId()));
 
         String toNodeId = intentMessage.getParamValue("to");
         AbstractNode toNode = databaseController.getNodeById(toNodeId);
@@ -105,7 +105,7 @@ public class GraphController {
             throw new RuntimeException("invalid to node id");
         policy.setTo(toNode);
         graphEntityList.add(this.createGraphNode(toNode));
-        graphEntityList.add(this.createGraphEdge(toNode.getId(),policy.getId()));
+        graphEntityList.add(this.createGraphEdge(toNode.getId(), policy.getId()));
 
         switch (intentMessage.getParamValue("operation")) {
 
@@ -208,14 +208,9 @@ public class GraphController {
 
         String source = intentMessage.getParamValue("source");
         String target = intentMessage.getParamValue("target");
-        boolean nodeConnection = databaseController.createNodeConnection(source, target);
-
-        if (!nodeConnection) {
-            throw new RuntimeException("could not connect " + source + " and " + target);
-        }
+        databaseController.createNodeConnection(source, target);
 
         return this.createGraphEdge(source, target);
-
     }
 
 
@@ -354,13 +349,22 @@ public class GraphController {
     }
 
 
-    private GraphNode createApplication(IntentMessage intentMessage){
+    private List<GraphEntity> createApplication(IntentMessage intentMessage) {
+
+        List<GraphEntity>entities = new ArrayList<>();
 
         String name = intentMessage.getParamValue("name");
         String port = intentMessage.getParamValue("port");
         Application application = databaseController.createApplication(name, Short.valueOf(port));
+        entities.add(this.createGraphNode(application));
 
-        return this.createGraphNode(application);
+        String hostName = intentMessage.getParamValue("host");
+        if (hostName != null ) {
+            VirtualMachine vm =  (VirtualMachine) databaseController.getNodeById(hostName);
+            application.setHost(vm);
+            entities.add(this.createGraphEdge(application.getId(), vm.getId()));
+        }
 
+        return entities;
     }
 }

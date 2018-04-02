@@ -279,10 +279,8 @@ public class SimpleHintController implements HintController {
 
     private IntentMessage createApplication(IntentMessage intentMessage){
 
-        String s = "add application app1 listen on port 3306";
-
         Pattern p = Pattern.compile("(add|create)\\s+application\\s+([a-z0-9]+).*port\\s+([0-9]+)");
-        Matcher m = p.matcher(s);
+        Matcher m = p.matcher(intentMessage.getHint());
 
         boolean found = m.find();
         if (!found)
@@ -290,6 +288,14 @@ public class SimpleHintController implements HintController {
 
         intentMessage.addParam("name", m.group(2));
         intentMessage.addParam("port", m.group(3));
+
+        p = Pattern.compile(".*(host|vm)\\s+([a-z0-9]+).*");
+        m = p.matcher(intentMessage.getHint());
+        found = m.find();
+        if (found) {
+            intentMessage.addParam("host", m.group(2));
+        }
+
         intentMessage.setIntent("addApplication");
         intentMessage.setStatus(IntentStatus.DONE);
         return intentMessage;

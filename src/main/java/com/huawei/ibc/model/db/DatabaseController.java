@@ -99,15 +99,14 @@ public class DatabaseController {
     }
 
 
-    public boolean createNodeConnection(String sourceId, String targetId) {
+    public void createNodeConnection(String sourceId, String targetId) {
 
         AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId);
-        if (sourceDevice == null)
-            return false;
 
         AbstractDevice targetDevice = (AbstractDevice) nodeMap.get(targetId);
-        if (targetDevice == null) {
-            return false;
+
+        if (targetDevice == null || sourceDevice == null) {
+            throw new RuntimeException("could not connect " + sourceId + " and " + targetId);
         }
 
         ForwardingPort port1 = sourceDevice.addPort(addressController.getMacAddress());
@@ -116,7 +115,6 @@ public class DatabaseController {
         port1.setConnectedPort(port2);
         port2.setConnectedPort(port1);
 
-        return true;
 
     }
 
