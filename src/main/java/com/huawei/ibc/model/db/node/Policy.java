@@ -12,6 +12,8 @@ public class Policy extends AbstractNode {
     private AccessType accessType;
     private AbstractNode from;
     private AbstractNode to;
+    private Group fromGroup;
+    private Group toGroup;
 
     public Policy(String id) {
         super(id, NodeType.POLICY);
@@ -39,5 +41,21 @@ public class Policy extends AbstractNode {
 
     public void setTo(AbstractNode to) {
         this.to = to;
+    }
+
+    public Group getFromGroup() {
+        return fromGroup;
+    }
+
+    public void setFromGroup(Group fromGroup) {
+        this.fromGroup = fromGroup;
+    }
+
+    public Group getToGroup() {
+        return toGroup;
+    }
+
+    public void setToGroup(Group toGroup) {
+        this.toGroup = toGroup;
     }
 }

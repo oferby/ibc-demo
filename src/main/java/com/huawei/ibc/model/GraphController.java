@@ -66,6 +66,9 @@ public class GraphController {
             case "showPolicies":
                 graphEntityList.addAll(this.showAllPolicies(intentMessage));
                 return graphEntityList;
+            case "addApplication":
+                graphEntityList.add(this.createApplication(intentMessage));
+                return graphEntityList;
         }
 
         throw new RuntimeException("not supported!");
@@ -350,4 +353,14 @@ public class GraphController {
         return edge;
     }
 
+
+    private GraphNode createApplication(IntentMessage intentMessage){
+
+        String name = intentMessage.getParamValue("name");
+        String port = intentMessage.getParamValue("port");
+        Application application = databaseController.createApplication(name, Short.valueOf(port));
+
+        return this.createGraphNode(application);
+
+    }
 }

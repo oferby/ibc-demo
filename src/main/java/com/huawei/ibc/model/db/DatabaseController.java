@@ -11,11 +11,9 @@ import java.util.*;
 @Controller
 public class DatabaseController {
 
-    private long lastId = 0;
-
     private Map<String, Policy> policyMap = new HashMap<>();
-    private Map<String, AbstractNode> groupMap = new HashMap<>();
-    private Map<String, AbstractDevice> nodeMap = new HashMap<>();
+    private Map<String, Group> groupMap = new HashMap<>();
+    private Map<String, AbstractNode> nodeMap = new HashMap<>();
 
     @Autowired
     private AddressController addressController;
@@ -46,8 +44,14 @@ public class DatabaseController {
         groupMap.put(name, all);
     }
 
+    private void validateUniqueName(String name) {
+        if (nodeMap.containsKey(name))
+            throw new RuntimeException("name already exists");
+    }
+
     public VirtualMachine createVirtualMachine(String name) {
 
+        this.validateUniqueName(name);
         VirtualMachine vm = new VirtualMachine(name);
         nodeMap.put(name, vm);
 
@@ -56,6 +60,8 @@ public class DatabaseController {
     }
 
     public Router createRouter(String name) {
+
+        this.validateUniqueName(name);
         Router router = new Router(name);
         nodeMap.put(name, router);
 
@@ -63,36 +69,43 @@ public class DatabaseController {
     }
 
     public Switch createSwitch(String name) {
+
+        this.validateUniqueName(name);
         Switch aSwitch = new Switch(name);
         nodeMap.put(name, aSwitch);
-
         return aSwitch;
     }
 
     public Firewall createFirewall(String name) {
-
+        this.validateUniqueName(name);
         Firewall firewall = new Firewall(name);
         nodeMap.put(name, firewall);
-
         return firewall;
 
     }
 
-    public Gateway createGateway(String name){
+    public Gateway createGateway(String name) {
+        this.validateUniqueName(name);
         Gateway gateway = new Gateway(name);
         nodeMap.put(name, gateway);
         return gateway;
     }
 
+    public Application createApplication(String name, Short listerOnPort) {
+        Application application = new Application(name);
+        application.setListenOnPort(listerOnPort);
+        nodeMap.put(name, application);
+        return application;
+    }
 
 
     public boolean createNodeConnection(String sourceId, String targetId) {
 
-        AbstractDevice sourceDevice = nodeMap.get(sourceId);
+        AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId);
         if (sourceDevice == null)
             return false;
 
-        AbstractDevice targetDevice = nodeMap.get(targetId);
+        AbstractDevice targetDevice = (AbstractDevice) nodeMap.get(targetId);
         if (targetDevice == null) {
             return false;
         }
@@ -109,11 +122,11 @@ public class DatabaseController {
 
     public void deleteNodeConnection(String sourceId, String targetId) {
 
-        AbstractDevice sourceDevice = nodeMap.get(sourceId);
+        AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId);
         if (sourceDevice == null)
             throw new RuntimeException("source id not found");
 
-        AbstractDevice targetDevice = nodeMap.get(targetId);
+        AbstractDevice targetDevice = (AbstractDevice) nodeMap.get(targetId);
         if (targetDevice == null) {
             throw new RuntimeException("target id not found");
         }
@@ -129,19 +142,25 @@ public class DatabaseController {
     }
 
     public Collection<AbstractDevice> getAllDevices() {
-        return nodeMap.values();
+
+        Collection<AbstractDevice> devices = new ArrayList<>();
+        Collection<AbstractNode> nodes = nodeMap.values();
+        nodes.removeIf(node -> !(node instanceof AbstractDevice));
+        for (AbstractNode node : nodes) {
+            devices.add((AbstractDevice) node);
+        }
+
+        return devices;
     }
 
     public void createGroup(String groupId, GroupType groupType) {
+
+        this.validateUniqueName(groupId);
         groupMap.put(groupId, new Group(groupId, groupType));
     }
 
-    public void createGroup(Group group) {
-        this.groupMap.put(group.getId(), group);
-    }
-
     public Group getGroup(String id) {
-        return (Group) groupMap.get(id);
+        return groupMap.get(id);
     }
 
     public void deleteGroup(String id) {
@@ -150,7 +169,7 @@ public class DatabaseController {
 
     public void addNodesToGroup(String groupId, Set<AbstractNode> nodeSet) {
 
-        Group group = (Group) groupMap.get(groupId);
+        Group group = groupMap.get(groupId);
         Set<AbstractNode> nodes = group.getNodeSet();
         if (nodes == null) {
             nodes = new HashSet<>();
@@ -161,7 +180,7 @@ public class DatabaseController {
     }
 
     public Set<AbstractNode> getGroupNodes(String groupId) {
-        return ((Group) groupMap.get(groupId)).getNodeSet();
+        return groupMap.get(groupId).getNodeSet();
     }
 
     public Policy createPolicy(String policyName) {
@@ -174,14 +193,13 @@ public class DatabaseController {
         return policyMap.get(name);
     }
 
-    public Collection<Policy> getAllPolicies(){
+    public Collection<Policy> getAllPolicies() {
         return this.policyMap.values();
     }
 
     public void deleteTargetPolicy(String targetId) {
         policyMap.remove(targetId);
     }
-
 
 
 }

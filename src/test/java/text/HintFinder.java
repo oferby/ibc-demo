@@ -84,20 +84,24 @@ public class HintFinder {
     @Test
     public void extractWord() {
 
-        String s = "set policy p1 allow traffic from node4 to node5 ";
+        String s = "add application app1 listen on port 3306";
 
-        Pattern p = Pattern.compile("([a-z0-9]+)\\s+.*");
+        Pattern p = Pattern.compile("(add|create)\\s+application\\s+([a-z0-9]+).*port\\s+([0-9]+)");
         Matcher m = p.matcher(s);
 
         boolean b = m.find();
 
         int groupCount = m.groupCount();
 
-        String group = m.group(1);
+        String appName = m.group(2);
 
-        System.out.println(groupCount);
+        String portNumber = m.group(3);
+
+        assert portNumber != null;
 
 
     }
+
+
 
 }

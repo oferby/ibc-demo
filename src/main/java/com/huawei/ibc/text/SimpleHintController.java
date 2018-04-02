@@ -42,6 +42,8 @@ public class SimpleHintController implements HintController {
         commandSet.add("show all policies");
         commandSet.add("display policy");
         commandSet.add("set policy");
+        commandSet.add("add application");
+        commandSet.add("create application");
 
 
         patternMap.put(Pattern.compile("(add|create)\\s+vm.+"), "addVm");
@@ -49,6 +51,7 @@ public class SimpleHintController implements HintController {
         patternMap.put(Pattern.compile("(add|create)\\s+router.+"), "addRouter");
         patternMap.put(Pattern.compile("(add|create)\\s+firewall.+"), "addFirewall");
         patternMap.put(Pattern.compile("(add|create)\\s+service.+"), "addService");
+        patternMap.put(Pattern.compile("(add|create)\\s+application.+"), "addApplication");
         patternMap.put(Pattern.compile("(show|display)\\s+(all\\s+)?services\\s*"), "showService");
         patternMap.put(Pattern.compile("(add|create)\\s+policy.+"), "addPolicy");
         patternMap.put(Pattern.compile("set\\s+policy.+"), "setPolicy");
@@ -161,6 +164,9 @@ public class SimpleHintController implements HintController {
                 return this.getShowAllIntent(intentMessage, "showService");
             case "setPolicy":
                 return this.getSetPolicyIntent(intentMessage);
+            case "addApplication":
+                return this.createApplication(intentMessage);
+
         }
 
         return intentMessage;
@@ -271,6 +277,23 @@ public class SimpleHintController implements HintController {
         return intentMessage;
     }
 
+    private IntentMessage createApplication(IntentMessage intentMessage){
+
+        String s = "add application app1 listen on port 3306";
+
+        Pattern p = Pattern.compile("(add|create)\\s+application\\s+([a-z0-9]+).*port\\s+([0-9]+)");
+        Matcher m = p.matcher(s);
+
+        boolean found = m.find();
+        if (!found)
+            throw new RuntimeException("invalid parameter for create application");
+
+        intentMessage.addParam("name", m.group(2));
+        intentMessage.addParam("port", m.group(3));
+        intentMessage.setIntent("addApplication");
+        intentMessage.setStatus(IntentStatus.DONE);
+        return intentMessage;
+    }
 
     private String getNodeName(String command) {
         String[] strings = command.split(" ");
