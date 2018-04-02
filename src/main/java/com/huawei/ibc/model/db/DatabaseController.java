@@ -2,7 +2,6 @@ package com.huawei.ibc.model.db;
 
 import com.huawei.ibc.model.common.GroupType;
 import com.huawei.ibc.model.db.node.*;
-import com.huawei.ibc.model.db.protocol.MACAddress;
 import com.huawei.ibc.service.AddressController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -11,6 +10,8 @@ import java.util.*;
 
 @Controller
 public class DatabaseController {
+
+    private long lastId = 0;
 
     private Map<String, Policy> policyMap = new HashMap<>();
     private Map<String, AbstractNode> groupMap = new HashMap<>();
@@ -23,7 +24,14 @@ public class DatabaseController {
         this.addInternalNodes();
     }
 
-    public AbstractNode getNodeById(String id){
+    public void deleteAll() {
+        nodeMap.clear();
+        groupMap.clear();
+        policyMap.clear();
+        this.addInternalNodes();
+    }
+
+    public AbstractNode getNodeById(String id) {
         return nodeMap.get(id);
     }
 
@@ -70,6 +78,14 @@ public class DatabaseController {
 
     }
 
+    public Gateway createGateway(String name){
+        Gateway gateway = new Gateway(name);
+        nodeMap.put(name, gateway);
+        return gateway;
+    }
+
+
+
     public boolean createNodeConnection(String sourceId, String targetId) {
 
         AbstractDevice sourceDevice = nodeMap.get(sourceId);
@@ -89,13 +105,6 @@ public class DatabaseController {
 
         return true;
 
-    }
-
-    public void deleteAll() {
-        nodeMap.clear();
-        groupMap.clear();
-        policyMap.clear();
-        this.addInternalNodes();
     }
 
     public void deleteNodeConnection(String sourceId, String targetId) {
@@ -155,20 +164,22 @@ public class DatabaseController {
         return ((Group) groupMap.get(groupId)).getNodeSet();
     }
 
-    public void createPolicy(String policyId) {
-        policyMap.put(policyId, new Policy(policyId));
-
-    }
-    public void createPolicy(Policy policy) {
-        policyMap.put(policy.getId(), policy);
+    public Policy createPolicy(String policyName) {
+        Policy policy = new Policy(policyName);
+        policyMap.put(policyName, policy);
+        return policy;
     }
 
-    public Policy getPolicy(String id){
-        return policyMap.get(id);
+    public Policy getPolicy(String name) {
+        return policyMap.get(name);
     }
 
-    public void deletePolicy(String id){
-        policyMap.remove(id);
+    public Collection<Policy> getAllPolicies(){
+        return this.policyMap.values();
+    }
+
+    public void deleteTargetPolicy(String targetId) {
+        policyMap.remove(targetId);
     }
 
 

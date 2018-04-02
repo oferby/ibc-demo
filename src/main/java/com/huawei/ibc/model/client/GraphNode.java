@@ -34,6 +34,12 @@ public class GraphNode extends GraphEntity{
             case INTERNET:
                 this.setNodeClass("internet");
                 break;
+            case POLICY:
+                this.setNodeClass("policy");
+                break;
+            case SERVICE:
+                this.setNodeClass("service");
+                break;
 
             default:
                 throw new RuntimeException();

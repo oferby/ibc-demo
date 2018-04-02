@@ -70,7 +70,14 @@ function createGraph(){
                       style: {
                         'background-image': 'images/firewall.png'
                       }
-                    }
+                    },
+                     {
+                       selector: '.policy',
+                       style: {
+                         'background-image': 'images/policy.png'
+                       }
+                     }
+
                   ]
             });
 

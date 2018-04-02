@@ -2,7 +2,6 @@ package com.huawei.ibc.text;
 
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.message.IntentStatus;
-import javafx.collections.transformation.SortedList;
 import org.springframework.stereotype.Controller;
 
 import java.util.*;
@@ -32,21 +31,35 @@ public class SimpleHintController implements HintController {
         commandSet.add("disconnect");
         commandSet.add("delete all");
         commandSet.add("show all");
+        commandSet.add("add service");
+        commandSet.add("create service");
+        commandSet.add("show service");
+        commandSet.add("show all services");
+        commandSet.add("display service");
+        commandSet.add("add policy");
+        commandSet.add("create policy");
+        commandSet.add("show policy");
+        commandSet.add("show all policies");
+        commandSet.add("display policy");
+        commandSet.add("set policy");
 
-        patternMap.put(Pattern.compile("add\\s+vm.+"), "addVm");
-        patternMap.put(Pattern.compile("create\\s+vm.+"), "addVm");
-        patternMap.put(Pattern.compile("add\\s+switch.+"), "addSwitch");
-        patternMap.put(Pattern.compile("create\\s+switch.+"), "addSwitch");
-        patternMap.put(Pattern.compile("add\\s+router.+"), "addRouter");
-        patternMap.put(Pattern.compile("create\\s+router.+"), "addRouter");
-        patternMap.put(Pattern.compile("add\\s+firewall.+"), "addFirewall");
-        patternMap.put(Pattern.compile("create\\s+firewall.+"), "addFirewall");
+
+        patternMap.put(Pattern.compile("(add|create)\\s+vm.+"), "addVm");
+        patternMap.put(Pattern.compile("(add|create)\\s+switch.+"), "addSwitch");
+        patternMap.put(Pattern.compile("(add|create)\\s+router.+"), "addRouter");
+        patternMap.put(Pattern.compile("(add|create)\\s+firewall.+"), "addFirewall");
+        patternMap.put(Pattern.compile("(add|create)\\s+service.+"), "addService");
+        patternMap.put(Pattern.compile("(show|display)\\s+(all\\s+)?services\\s*"), "showService");
+        patternMap.put(Pattern.compile("(add|create)\\s+policy.+"), "addPolicy");
+        patternMap.put(Pattern.compile("set\\s+policy.+"), "setPolicy");
+        patternMap.put(Pattern.compile("(show|display)\\s+(all\\s+)?(policies|policy)\\s*"), "showPolicies");
         patternMap.put(Pattern.compile("build\\s+demo\\s*"), "buildDemo");
         patternMap.put(Pattern.compile("clear\\s*"), "clear");
         patternMap.put(Pattern.compile("delete\\s+all\\s*"), "deleteAll");
         patternMap.put(Pattern.compile("connect.+"), "connect");
         patternMap.put(Pattern.compile("disconnect.+"), "disconnect");
         patternMap.put(Pattern.compile("show\\s+all\\s*"), "showAll");
+
 
     }
 
@@ -136,12 +149,26 @@ public class SimpleHintController implements HintController {
                 return this.getCreateNodeIntent(intentMessage, "addSwitch");
             case "addFirewall":
                 return this.getCreateNodeIntent(intentMessage, "addFirewall");
+            case "addService":
+                return this.getCreateNodeIntent(intentMessage, "addService");
+            case "addPolicy":
+                return this.getCreateNodeIntent(intentMessage, "addPolicy");
             case "showAll":
-                intentMessage.setStatus(IntentStatus.DONE);
-                intentMessage.setIntent("showAll");
-                break;
+                return this.getShowAllIntent(intentMessage, "showAll");
+            case "showPolicies":
+                return this.getShowAllIntent(intentMessage, "showPolicies");
+            case "showService":
+                return this.getShowAllIntent(intentMessage, "showService");
+            case "setPolicy":
+                return this.getSetPolicyIntent(intentMessage);
         }
 
+        return intentMessage;
+    }
+
+    private IntentMessage getShowAllIntent(IntentMessage intentMessage, String intent) {
+        intentMessage.setStatus(IntentStatus.DONE);
+        intentMessage.setIntent(intent);
         return intentMessage;
     }
 
@@ -207,6 +234,41 @@ public class SimpleHintController implements HintController {
         }
         return intentMessage;
 
+    }
+
+    private IntentMessage getSetPolicyIntent(IntentMessage intentMessage){
+
+        String command = intentMessage.getHint();
+        Pattern p = Pattern.compile("set\\s+policy\\s+([a-z0-9]+)\\s+(allow|deny).*?(from|to)\\s+([a-z0-9]+).*?(from|to)\\s+([a-z0-9]+)");
+        Matcher m = p.matcher(command);
+
+        if (!m.find() ) {
+            throw new RuntimeException("could not find parameters in command");
+        }
+
+        int groupCount = m.groupCount();
+
+        if (groupCount < 6)
+            throw new RuntimeException("invalid number of parameters");
+
+        String policyName = m.group(1);
+        intentMessage.addParam("name", policyName);
+
+        String grant1 = m.group(2);
+        intentMessage.addParam("operation", grant1);
+
+        String toFrom = m.group(3);
+        String node1 = m.group(4);
+        intentMessage.addParam(toFrom, node1);
+
+
+        String toFrom2 = m.group(5);
+        String node2 = m.group(6);
+        intentMessage.addParam(toFrom2, node2);
+
+        intentMessage.setIntent("setPolicy");
+        intentMessage.setStatus(IntentStatus.DONE);
+        return intentMessage;
     }
 
 

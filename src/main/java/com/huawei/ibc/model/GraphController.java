@@ -34,7 +34,7 @@ public class GraphController {
         List<GraphEntity> graphEntityList = new ArrayList<>();
         switch (intent) {
             case "buildDemo":
-                return buildDemo();
+                return buildDemo(intentMessage);
             case "addVm":
                 graphEntityList.add(addVm(intentMessage));
                 return graphEntityList;
@@ -54,13 +54,98 @@ public class GraphController {
                 this.deleteAll(intentMessage);
                 return null;
             case "showAll":
-                return showAll(graphEntityList);
+                return showAll(intentMessage, graphEntityList);
             case "addFirewall":
                 graphEntityList.add(addFirewall(intentMessage));
+                return graphEntityList;
+            case "addPolicy":
+                graphEntityList.add(this.addPolicy(intentMessage));
+                return graphEntityList;
+            case "setPolicy":
+                return this.setPolicy(intentMessage);
+            case "showPolicies":
+                graphEntityList.addAll(this.showAllPolicies(intentMessage));
                 return graphEntityList;
         }
 
         throw new RuntimeException("not supported!");
+    }
+
+    private GraphEntity addPolicy(IntentMessage intentMessage) {
+
+        Policy policy = databaseController.createPolicy(intentMessage.getParamValue("name"));
+        return this.createGraphNode(policy);
+
+    }
+
+    private List<GraphEntity> setPolicy(IntentMessage intentMessage) {
+
+        List<GraphEntity> graphEntityList = new ArrayList<>();
+
+        String policyName = intentMessage.getParamValue("name");
+        Policy policy = databaseController.getPolicy(policyName);
+        if (policy == null)
+            throw new RuntimeException("policy name not found");
+        graphEntityList.add(this.createGraphNode(policy));
+
+        String fromNodeId = intentMessage.getParamValue("from");
+        AbstractNode fromNode = databaseController.getNodeById(fromNodeId);
+        if (fromNode == null)
+            throw new RuntimeException("invalid from node id");
+        policy.setFrom(fromNode);
+        graphEntityList.add(this.createGraphNode(fromNode));
+        graphEntityList.add(this.createGraphEdge(fromNode.getId(),policy.getId()));
+
+        String toNodeId = intentMessage.getParamValue("to");
+        AbstractNode toNode = databaseController.getNodeById(toNodeId);
+        if (toNode == null)
+            throw new RuntimeException("invalid to node id");
+        policy.setTo(toNode);
+        graphEntityList.add(this.createGraphNode(toNode));
+        graphEntityList.add(this.createGraphEdge(toNode.getId(),policy.getId()));
+
+        switch (intentMessage.getParamValue("operation")) {
+
+            case "allow":
+                policy.setAccessType(AccessType.ALLOW);
+                break;
+
+            case "deny":
+                policy.setAccessType(AccessType.DENY);
+                break;
+
+            default:
+                throw new RuntimeException("invalid policy operation");
+
+        }
+
+        return graphEntityList;
+    }
+
+    private Set<GraphEntity> showAllPolicies(IntentMessage intentMessage) {
+
+        this.sendClearLocalIntent(intentMessage);
+
+        Collection<Policy> policies = databaseController.getAllPolicies();
+
+        Set<GraphEntity> graphEntities = new HashSet<>();
+        for (Policy policy : policies) {
+            graphEntities.add(this.createGraphNode(policy.getId(), NodeType.POLICY));
+            AbstractNode from = policy.getFrom();
+            if (from != null) {
+                graphEntities.add(this.createGraphNode(from.getId(), from.getNodeType()));
+                graphEntities.add(this.createGraphEdge(from.getId(), policy.getId()));
+
+            }
+            AbstractNode to = policy.getTo();
+            if (to != null) {
+                graphEntities.add(this.createGraphNode(to.getId(), to.getNodeType()));
+                graphEntities.add(this.createGraphEdge(to.getId(), policy.getId()));
+            }
+        }
+
+        return graphEntities;
+
     }
 
     private void disconnectNodes(IntentMessage intentMessage) {
@@ -70,7 +155,7 @@ public class GraphController {
         databaseController.deleteNodeConnection(sourceId, targetId);
 
         intentMessage.setStatus(IntentStatus.LOCAL);
-        String id = this.getEdgeEntity(sourceId, targetId).getId();
+        String id = this.createGraphEdge(sourceId, targetId).getId();
         intentMessage.addParam("id", id);
         template.convertAndSend("/topic/hint", intentMessage);
 
@@ -79,14 +164,21 @@ public class GraphController {
     private void deleteAll(IntentMessage intentMessage) {
 
         databaseController.deleteAll();
-        intentMessage.setStatus(IntentStatus.LOCAL);
-        intentMessage.setIntent("clear");
-
-        template.convertAndSend("/topic/hint", intentMessage);
+        this.sendClearLocalIntent(intentMessage);
 
     }
 
-    private List<GraphEntity> showAll(List<GraphEntity> graphEntityList) {
+    private void sendClearLocalIntent(IntentMessage intentMessage) {
+
+        intentMessage.setStatus(IntentStatus.LOCAL);
+        intentMessage.setIntent("clear");
+        template.convertAndSend("/topic/hint", intentMessage);
+    }
+
+
+    private List<GraphEntity> showAll(IntentMessage intentMessage, List<GraphEntity> graphEntityList) {
+
+        this.sendClearLocalIntent(intentMessage);
 
         Collection<AbstractDevice> devices = databaseController.getAllDevices();
         Set<GraphEdge> graphEdgeSet = new HashSet<>();
@@ -96,7 +188,7 @@ public class GraphController {
 
             for (ForwardingPort port : device.getPortList()) {
 
-                graphEdgeSet.add(getEdgeEntity(device.getId(),
+                graphEdgeSet.add(createGraphEdge(device.getId(),
                         port.getConnectedPort().getPortDevice().getId()));
 
             }
@@ -119,7 +211,7 @@ public class GraphController {
             throw new RuntimeException("could not connect " + source + " and " + target);
         }
 
-        return this.getEdgeEntity(source, target);
+        return this.createGraphEdge(source, target);
 
     }
 
@@ -161,7 +253,9 @@ public class GraphController {
 
     }
 
-    private List<GraphEntity> buildDemo() {
+    private List<GraphEntity> buildDemo(IntentMessage intentMessage) {
+
+        this.sendClearLocalIntent(intentMessage);
 
         List<GraphEntity> graphEntityList = new ArrayList<>();
         List<Router> routerList = new ArrayList<>();
@@ -174,14 +268,14 @@ public class GraphController {
             for (int i = 0; i < 3; i++) {
                 Switch sw = databaseController.createSwitch("sw" + (i + h * 10));
                 graphEntityList.add(this.createGraphNode(sw));
-                databaseController.createNodeConnection(router.getId(),sw.getId());
-                graphEntityList.add(this.getEdgeEntity(router.getId(),sw.getId()));
+                databaseController.createNodeConnection(router.getId(), sw.getId());
+                graphEntityList.add(this.createGraphEdge(router.getId(), sw.getId()));
 
                 for (int j = 0; j < 5; j++) {
                     VirtualMachine vm = databaseController.createVirtualMachine("vm" + (i * 10 + j + h * 100));
                     graphEntityList.add(this.createGraphNode(vm));
                     databaseController.createNodeConnection(sw.getId(), vm.getId());
-                    graphEntityList.add(this.getEdgeEntity(sw.getId(), vm.getId()));
+                    graphEntityList.add(this.createGraphEdge(sw.getId(), vm.getId()));
                 }
             }
         }
@@ -190,8 +284,8 @@ public class GraphController {
         for (Router router : routerList) {
             for (Router router1 : routerList) {
                 if (!router.getId().equals(router1.getId())) {
-                    databaseController.createNodeConnection(router1.getId(),router.getId());
-                    graphEdgeSet.add(this.getEdgeEntity(router1.getId(),router.getId()));
+                    databaseController.createNodeConnection(router1.getId(), router.getId());
+                    graphEdgeSet.add(this.createGraphEdge(router1.getId(), router.getId()));
                 }
             }
         }
@@ -201,26 +295,26 @@ public class GraphController {
 
         Internet internet = (Internet) databaseController.getNodeById("Internet");
         graphEntityList.add(this.createGraphNode(internet));
-        Gateway gateway = new Gateway("gw1");
+        Gateway gateway = databaseController.createGateway("gw1");
         graphEntityList.add(this.createGraphNode(gateway));
         databaseController.createNodeConnection(gateway.getId(), internet.getId());
-        graphEntityList.add(this.getEdgeEntity(gateway.getId(), internet.getId()));
+        graphEntityList.add(this.createGraphEdge(gateway.getId(), internet.getId()));
 
         databaseController.createNodeConnection(gateway.getId(), "r1");
         databaseController.createNodeConnection(gateway.getId(), "r2");
         databaseController.createNodeConnection(gateway.getId(), "r3");
         databaseController.createNodeConnection(gateway.getId(), "r4");
-        graphEntityList.add(this.getEdgeEntity(gateway.getId(), "r1"));
-        graphEntityList.add(this.getEdgeEntity(gateway.getId(), "r2"));
-        graphEntityList.add(this.getEdgeEntity(gateway.getId(), "r3"));
-        graphEntityList.add(this.getEdgeEntity(gateway.getId(), "r4"));
+        graphEntityList.add(this.createGraphEdge(gateway.getId(), "r1"));
+        graphEntityList.add(this.createGraphEdge(gateway.getId(), "r2"));
+        graphEntityList.add(this.createGraphEdge(gateway.getId(), "r3"));
+        graphEntityList.add(this.createGraphEdge(gateway.getId(), "r4"));
 
         return graphEntityList;
     }
 
-    private GraphNode createGraphNode(AbstractDevice device) {
+    private GraphNode createGraphNode(AbstractNode node) {
 
-        return this.createGraphNode(device.getId(), device.getNodeType());
+        return this.createGraphNode(node.getId(), node.getNodeType());
 
     }
 
@@ -236,7 +330,7 @@ public class GraphController {
     }
 
 
-    private GraphEdge getEdgeEntity(String sourceId, String targetId) {
+    private GraphEdge createGraphEdge(String sourceId, String targetId) {
 
         GraphEdge edge = new GraphEdge();
         edge.setGroup(Group.EDGES);
