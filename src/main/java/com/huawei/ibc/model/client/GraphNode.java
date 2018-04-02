@@ -2,7 +2,7 @@ package com.huawei.ibc.model.client;
 
 import com.huawei.ibc.model.common.NodeType;
 
-public class NodeEntity extends GraphEntity{
+public class GraphNode extends GraphEntity{
 
     public void setType(NodeType type) {
 

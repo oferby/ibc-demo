@@ -9,7 +9,6 @@ import com.huawei.ibc.model.db.DatabaseController;
 import com.huawei.ibc.model.db.node.*;
 import com.huawei.ibc.service.AddressController;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -90,27 +89,27 @@ public class GraphController {
     private List<GraphEntity> showAll(List<GraphEntity> graphEntityList) {
 
         Collection<AbstractDevice> devices = databaseController.getAllDevices();
-        Set<EdgeEntity> edgeEntitySet = new HashSet<>();
+        Set<GraphEdge> graphEdgeSet = new HashSet<>();
 
         for (AbstractDevice device : devices) {
-            graphEntityList.add(this.createNodeEntity(device));
+            graphEntityList.add(this.createGraphNode(device));
 
             for (ForwardingPort port : device.getPortList()) {
 
-                edgeEntitySet.add(getEdgeEntity(device.getId(),
+                graphEdgeSet.add(getEdgeEntity(device.getId(),
                         port.getConnectedPort().getPortDevice().getId()));
 
             }
 
         }
 
-        graphEntityList.addAll(edgeEntitySet);
+        graphEntityList.addAll(graphEdgeSet);
 
         return graphEntityList;
     }
 
 
-    private EdgeEntity createNodeConnection(IntentMessage intentMessage) {
+    private GraphEdge createNodeConnection(IntentMessage intentMessage) {
 
         String source = intentMessage.getParamValue("source");
         String target = intentMessage.getParamValue("target");
@@ -128,26 +127,26 @@ public class GraphController {
     private GraphEntity addVm(IntentMessage intentMessage) {
 
         VirtualMachine vm = databaseController.createVirtualMachine(this.getNodeName(intentMessage));
-        return this.createNodeEntity(vm);
+        return this.createGraphNode(vm);
 
     }
 
     private GraphEntity addRouter(IntentMessage intentMessage) {
 
         Router router = databaseController.createRouter(this.getNodeName(intentMessage));
-        return this.createNodeEntity(router);
+        return this.createGraphNode(router);
 
     }
 
     private GraphEntity addSwitch(IntentMessage intentMessage) {
 
         Switch aSwitch = databaseController.createSwitch(this.getNodeName(intentMessage));
-        return this.createNodeEntity(aSwitch);
+        return this.createGraphNode(aSwitch);
     }
 
     private GraphEntity addFirewall(IntentMessage intentMessage) {
         Firewall firewall = databaseController.createFirewall(this.getNodeName(intentMessage));
-        return this.createNodeEntity(firewall);
+        return this.createGraphNode(firewall);
     }
 
 
@@ -169,41 +168,41 @@ public class GraphController {
         for (int h = 0; h < 5; h++) {
 
             Router router = databaseController.createRouter("r" + h);
-            graphEntityList.add(this.createNodeEntity(router));
+            graphEntityList.add(this.createGraphNode(router));
             routerList.add(router);
 
             for (int i = 0; i < 3; i++) {
                 Switch sw = databaseController.createSwitch("sw" + (i + h * 10));
-                graphEntityList.add(this.createNodeEntity(sw));
+                graphEntityList.add(this.createGraphNode(sw));
                 databaseController.createNodeConnection(router.getId(),sw.getId());
                 graphEntityList.add(this.getEdgeEntity(router.getId(),sw.getId()));
 
                 for (int j = 0; j < 5; j++) {
                     VirtualMachine vm = databaseController.createVirtualMachine("vm" + (i * 10 + j + h * 100));
-                    graphEntityList.add(this.createNodeEntity(vm));
+                    graphEntityList.add(this.createGraphNode(vm));
                     databaseController.createNodeConnection(sw.getId(), vm.getId());
                     graphEntityList.add(this.getEdgeEntity(sw.getId(), vm.getId()));
                 }
             }
         }
 
-        Set<EdgeEntity>edgeEntitySet = new HashSet<>();
+        Set<GraphEdge> graphEdgeSet = new HashSet<>();
         for (Router router : routerList) {
             for (Router router1 : routerList) {
                 if (!router.getId().equals(router1.getId())) {
                     databaseController.createNodeConnection(router1.getId(),router.getId());
-                    edgeEntitySet.add(this.getEdgeEntity(router1.getId(),router.getId()));
+                    graphEdgeSet.add(this.getEdgeEntity(router1.getId(),router.getId()));
                 }
             }
         }
 
-        graphEntityList.addAll(edgeEntitySet);
+        graphEntityList.addAll(graphEdgeSet);
 
 
         Internet internet = (Internet) databaseController.getNodeById("Internet");
-        graphEntityList.add(this.createNodeEntity(internet));
+        graphEntityList.add(this.createGraphNode(internet));
         Gateway gateway = new Gateway("gw1");
-        graphEntityList.add(this.createNodeEntity(gateway));
+        graphEntityList.add(this.createGraphNode(gateway));
         databaseController.createNodeConnection(gateway.getId(), internet.getId());
         graphEntityList.add(this.getEdgeEntity(gateway.getId(), internet.getId()));
 
@@ -219,15 +218,15 @@ public class GraphController {
         return graphEntityList;
     }
 
-    private NodeEntity createNodeEntity(AbstractDevice device) {
+    private GraphNode createGraphNode(AbstractDevice device) {
 
-        return this.createNodeEntity(device.getId(), device.getNodeType());
+        return this.createGraphNode(device.getId(), device.getNodeType());
 
     }
 
-    private NodeEntity createNodeEntity(String id, NodeType type) {
+    private GraphNode createGraphNode(String id, NodeType type) {
 
-        NodeEntity graphEntity = new NodeEntity();
+        GraphNode graphEntity = new GraphNode();
         graphEntity.setId(id);
         graphEntity.setType(type);
         graphEntity.setGroup(Group.NODES);
@@ -237,9 +236,9 @@ public class GraphController {
     }
 
 
-    private EdgeEntity getEdgeEntity(String sourceId, String targetId) {
+    private GraphEdge getEdgeEntity(String sourceId, String targetId) {
 
-        EdgeEntity edge = new EdgeEntity();
+        GraphEdge edge = new GraphEdge();
         edge.setGroup(Group.EDGES);
 
         if (sourceId.compareTo(targetId) > 0) {

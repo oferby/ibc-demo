@@ -1,8 +1,8 @@
 package com.huawei.ibc.model.client;
 
-public class EdgeEntity extends GraphEntity {
+public class GraphEdge extends GraphEntity {
 
-    public EdgeEntity() {
+    public GraphEdge() {
         super();
         super.setGroup(Group.EDGES);
     }
@@ -26,12 +26,12 @@ public class EdgeEntity extends GraphEntity {
     @Override
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof EdgeEntity)){
+        if (!(obj instanceof GraphEdge)){
             return false;
         }
 
-        return super.getDataEntry("source").equals(((EdgeEntity) obj).getDataEntry("source")) &&
-                super.getDataEntry("target").equals(((EdgeEntity) obj).getDataEntry("target"));
+        return super.getDataEntry("source").equals(((GraphEdge) obj).getDataEntry("source")) &&
+                super.getDataEntry("target").equals(((GraphEdge) obj).getDataEntry("target"));
 
     }
 
