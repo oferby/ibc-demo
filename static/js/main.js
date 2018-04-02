@@ -174,8 +174,16 @@ $(document).ready(function(){
     connect();
     $("#input").keyup(function(event){
         console.log('key pressed: ' + event.which);
+
+        if ($("#input").val().length > 0) {
+            $('#hint').css('opacity', '1');
+        } else {
+            $('#hint').css('opacity', '0');
+        }
+
         if (event.which == 13) {
             $('#hint').text('') ;
+            $('#hint').css('opacity', '0');
             getHint(true);
             $("#input").val('');
         } else if (event.which == 32) {
