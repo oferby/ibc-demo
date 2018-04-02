@@ -3,9 +3,11 @@ package com.huawei.ibc.model;
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.message.IntentStatus;
 import com.huawei.ibc.model.client.*;
+import com.huawei.ibc.model.client.Group;
 import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.DatabaseController;
 import com.huawei.ibc.model.db.node.*;
+import com.huawei.ibc.service.AddressController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -23,6 +25,9 @@ public class GraphController {
 
     @Autowired
     private DatabaseController databaseController;
+
+    @Autowired
+    private AddressController addressController;
 
     public List<GraphEntity> getGraphEntity(IntentMessage intentMessage) {
 
@@ -191,7 +196,25 @@ public class GraphController {
                 }
             }
         }
+
         graphEntityList.addAll(edgeEntitySet);
+
+
+        Internet internet = (Internet) databaseController.getNodeById("Internet");
+        graphEntityList.add(this.createNodeEntity(internet));
+        Gateway gateway = new Gateway("gw1");
+        graphEntityList.add(this.createNodeEntity(gateway));
+        databaseController.createNodeConnection(gateway.getId(), internet.getId());
+        graphEntityList.add(this.getEdgeEntity(gateway.getId(), internet.getId()));
+
+        databaseController.createNodeConnection(gateway.getId(), "r1");
+        databaseController.createNodeConnection(gateway.getId(), "r2");
+        databaseController.createNodeConnection(gateway.getId(), "r3");
+        databaseController.createNodeConnection(gateway.getId(), "r4");
+        graphEntityList.add(this.getEdgeEntity(gateway.getId(), "r1"));
+        graphEntityList.add(this.getEdgeEntity(gateway.getId(), "r2"));
+        graphEntityList.add(this.getEdgeEntity(gateway.getId(), "r3"));
+        graphEntityList.add(this.getEdgeEntity(gateway.getId(), "r4"));
 
         return graphEntityList;
     }

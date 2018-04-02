@@ -1,34 +1,44 @@
 package com.huawei.ibc.model.db;
 
+import com.huawei.ibc.model.common.GroupType;
 import com.huawei.ibc.model.db.node.*;
 import com.huawei.ibc.model.db.protocol.MACAddress;
+import com.huawei.ibc.service.AddressController;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 public class DatabaseController {
 
+    private Map<String, Policy> policyMap = new HashMap<>();
+    private Map<String, AbstractNode> groupMap = new HashMap<>();
     private Map<String, AbstractDevice> nodeMap = new HashMap<>();
 
-    private long lastAddress = 100;
+    @Autowired
+    private AddressController addressController;
 
     public DatabaseController() {
-        this.addInternetNode();
+        this.addInternalNodes();
     }
 
+    public AbstractNode getNodeById(String id){
+        return nodeMap.get(id);
+    }
 
-    private void addInternetNode(){
+    private void addInternalNodes() {
 
         String name = "Internet";
         Internet internet = new Internet(name);
         nodeMap.put(name, internet);
+
+        name = "All";
+        Group all = new Group(name, GroupType.GENERAL);
+        groupMap.put(name, all);
     }
 
-    public VirtualMachine createVirtualMachine(String name){
+    public VirtualMachine createVirtualMachine(String name) {
 
         VirtualMachine vm = new VirtualMachine(name);
         nodeMap.put(name, vm);
@@ -37,21 +47,21 @@ public class DatabaseController {
 
     }
 
-    public Router createRouter(String name){
+    public Router createRouter(String name) {
         Router router = new Router(name);
-        nodeMap.put(name,router);
+        nodeMap.put(name, router);
 
         return router;
     }
 
-    public Switch createSwitch(String name){
+    public Switch createSwitch(String name) {
         Switch aSwitch = new Switch(name);
         nodeMap.put(name, aSwitch);
 
         return aSwitch;
     }
 
-    public Firewall createFirewall(String name){
+    public Firewall createFirewall(String name) {
 
         Firewall firewall = new Firewall(name);
         nodeMap.put(name, firewall);
@@ -60,19 +70,19 @@ public class DatabaseController {
 
     }
 
-    public boolean createNodeConnection(String sourceId, String targetId){
+    public boolean createNodeConnection(String sourceId, String targetId) {
 
         AbstractDevice sourceDevice = nodeMap.get(sourceId);
-        if (sourceDevice==null)
+        if (sourceDevice == null)
             return false;
 
         AbstractDevice targetDevice = nodeMap.get(targetId);
-        if (targetDevice==null){
+        if (targetDevice == null) {
             return false;
         }
 
-        ForwardingPort port1 = sourceDevice.addPort(MACAddress.valueOf(lastAddress++));
-        ForwardingPort port2 = targetDevice.addPort(MACAddress.valueOf(lastAddress++));
+        ForwardingPort port1 = sourceDevice.addPort(addressController.getMacAddress());
+        ForwardingPort port2 = targetDevice.addPort(addressController.getMacAddress());
 
         port1.setConnectedPort(port2);
         port2.setConnectedPort(port1);
@@ -81,19 +91,21 @@ public class DatabaseController {
 
     }
 
-    public void deleteAll(){
+    public void deleteAll() {
         nodeMap.clear();
-        this.addInternetNode();
+        groupMap.clear();
+        policyMap.clear();
+        this.addInternalNodes();
     }
 
-    public void deleteNodeConnection(String sourceId, String targetId){
+    public void deleteNodeConnection(String sourceId, String targetId) {
 
         AbstractDevice sourceDevice = nodeMap.get(sourceId);
-        if (sourceDevice==null)
+        if (sourceDevice == null)
             throw new RuntimeException("source id not found");
 
         AbstractDevice targetDevice = nodeMap.get(targetId);
-        if (targetDevice==null){
+        if (targetDevice == null) {
             throw new RuntimeException("target id not found");
         }
 
@@ -107,7 +119,58 @@ public class DatabaseController {
 
     }
 
-    public Collection<AbstractDevice> getAllDevices(){
+    public Collection<AbstractDevice> getAllDevices() {
         return nodeMap.values();
     }
+
+    public void createGroup(String groupId, GroupType groupType) {
+        groupMap.put(groupId, new Group(groupId, groupType));
+    }
+
+    public void createGroup(Group group) {
+        this.groupMap.put(group.getId(), group);
+    }
+
+    public Group getGroup(String id) {
+        return (Group) groupMap.get(id);
+    }
+
+    public void deleteGroup(String id) {
+        groupMap.remove(id);
+    }
+
+    public void addNodesToGroup(String groupId, Set<AbstractNode> nodeSet) {
+
+        Group group = (Group) groupMap.get(groupId);
+        Set<AbstractNode> nodes = group.getNodeSet();
+        if (nodes == null) {
+            nodes = new HashSet<>();
+        }
+        nodes.addAll(nodeSet);
+        group.setNodeSet(nodeSet);
+
+    }
+
+    public Set<AbstractNode> getGroupNodes(String groupId) {
+        return ((Group) groupMap.get(groupId)).getNodeSet();
+    }
+
+    public void createPolicy(String policyId) {
+        policyMap.put(policyId, new Policy(policyId));
+
+    }
+    public void createPolicy(Policy policy) {
+        policyMap.put(policy.getId(), policy);
+    }
+
+    public Policy getPolicy(String id){
+        return policyMap.get(id);
+    }
+
+    public void deletePolicy(String id){
+        policyMap.remove(id);
+    }
+
+
+
 }
