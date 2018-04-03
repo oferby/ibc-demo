@@ -1,24 +1,35 @@
-package com.huawei.ibc.model.db;
+package com.huawei.ibc.model.controller;
 
 import com.huawei.ibc.model.common.GroupType;
 import com.huawei.ibc.model.db.node.*;
-import com.huawei.ibc.service.AddressController;
+import com.huawei.ibc.model.db.protocol.DhcpRequestPacket;
+import org.apache.commons.net.util.SubnetUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Controller;
 
 import java.util.*;
 
 @Controller
-public class DatabaseController {
+public class DatabaseControllerImpl {
+
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseControllerImpl.class);
 
     private Map<String, Policy> policyMap = new HashMap<>();
     private Map<String, Group> groupMap = new HashMap<>();
     private Map<String, AbstractNode> nodeMap = new HashMap<>();
 
     @Autowired
-    private AddressController addressController;
+    private AddressControllerImpl addressController;
 
-    public DatabaseController() {
+    @Autowired
+    @Qualifier("threadPoolTaskExecutor")
+    private TaskExecutor taskExecutor;
+
+    public DatabaseControllerImpl() {
         this.addInternalNodes();
     }
 
@@ -32,6 +43,11 @@ public class DatabaseController {
     public AbstractNode getNodeById(String id) {
         return nodeMap.get(id);
     }
+
+    public <T extends AbstractNode> T getNodeByIdAndType(String id, Class<T> type) {
+        return type.cast(nodeMap.get(id));
+    }
+
 
     private void addInternalNodes() {
 
@@ -98,7 +114,6 @@ public class DatabaseController {
         return application;
     }
 
-
     public void createNodeConnection(String sourceId, String targetId) {
 
         AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId);
@@ -109,14 +124,49 @@ public class DatabaseController {
             throw new RuntimeException("could not connect " + sourceId + " and " + targetId);
         }
 
-        ForwardingPort port1 = sourceDevice.addPort(addressController.getMacAddress());
-        ForwardingPort port2 = targetDevice.addPort(addressController.getMacAddress());
+        ForwardingPort sourcePort = sourceDevice.addPort(addressController.getMacAddress());
+        ForwardingPort targetPort = targetDevice.addPort(addressController.getMacAddress());
 
-        port1.setConnectedPort(port2);
-        port2.setConnectedPort(port1);
+        sourcePort.setConnectedPort(targetPort);
+        targetPort.setConnectedPort(sourcePort);
 
+        if (sourceDevice instanceof Router) {
+            addSubnetToRouter((EthernetPort) sourcePort);
+        } else if (targetDevice instanceof Router) {
+            addSubnetToRouter((EthernetPort) targetPort);
+        }
+
+        if (sourceDevice instanceof VirtualMachine) {
+            this.addSubnetToHost((EthernetPort) sourcePort);
+
+        } else if (targetDevice instanceof VirtualMachine){
+            this.addSubnetToHost((EthernetPort) targetPort);
+        }
+    }
+
+    private void addSubnetToRouter(EthernetPort routerPort){
+
+        Subnet subnet = addressController.getNewSubnet();
+
+        String lowAddress = subnet.getUtils().getInfo().getLowAddress();
+
+        String netmask = subnet.getUtils().getInfo().getNetmask();
+
+        SubnetUtils routerSubnet = new SubnetUtils(lowAddress, netmask);
+        routerPort.setIpAddress(routerSubnet);
 
     }
+
+    private void addSubnetToHost(EthernetPort hostPort){
+
+        taskExecutor.execute(() -> {
+            DhcpRequestPacket packet = new DhcpRequestPacket();
+            hostPort.tx(packet);
+        });
+
+    }
+
+
 
     public void deleteNodeConnection(String sourceId, String targetId) {
 

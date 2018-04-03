@@ -15,11 +15,13 @@ public class Application extends AbstractNode implements ForwardingElement {
     @Override
     public void rx(EthernetPacket packet) {
 
+
+
     }
 
     @Override
     public void tx(EthernetPacket packet) {
-        host.rx(packet);
+        host.rx(host.getPortList().get(0), packet);
     }
 
     public Short getListenOnPort() {

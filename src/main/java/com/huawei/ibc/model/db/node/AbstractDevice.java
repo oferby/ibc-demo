@@ -1,13 +1,15 @@
 package com.huawei.ibc.model.db.node;
 
 import com.huawei.ibc.model.common.NodeType;
+import com.huawei.ibc.model.db.protocol.EthernetPacket;
 import com.huawei.ibc.model.db.protocol.MACAddress;
+import com.huawei.ibc.model.db.protocol.PromiscuousPort;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class AbstractDevice extends AbstractNode{
+public abstract class AbstractDevice extends AbstractNode implements ForwardingDevice {
 
     private List<ForwardingPort> portList = new ArrayList<>();
 
@@ -23,9 +25,9 @@ public class AbstractDevice extends AbstractNode{
         this.portList = portList;
     }
 
-    public List<String> getConnectedDevice(){
+    public List<String> getConnectedDevice() {
 
-        List<String>connectedDeviceList = new ArrayList<>();
+        List<String> connectedDeviceList = new ArrayList<>();
         for (ForwardingPort port : portList) {
             connectedDeviceList.add(port.getConnectedPort().getPortDevice().getId());
         }
@@ -34,17 +36,28 @@ public class AbstractDevice extends AbstractNode{
 
     }
 
-    public ForwardingPort addPort(MACAddress macAddress){
+    public ForwardingPort addPort(MACAddress macAddress) {
 
-        EthernetPort port = new EthernetPort(macAddress, this);
+        ForwardingPort port;
+        if (this instanceof Switch || this instanceof Internet || this instanceof Firewall) {
+            port = new PromiscuousPort(this);
+        } else {
+            port = new EthernetPort(macAddress, this);
+        }
+
         portList.add(port);
+
 
         return port;
     }
 
-    public void deletePort(ForwardingPort port){
+    public void deletePort(ForwardingPort port) {
 
         portList.removeIf(next -> next == port);
 
     }
+
+    @Override
+    public abstract void rx(ForwardingPort inPort, EthernetPacket packet);
+
 }

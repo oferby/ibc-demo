@@ -1,5 +1,6 @@
 package text;
 
+import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -108,6 +109,30 @@ public class HintFinder {
 
     }
 
+    @Test
+    public void testSubnet(){
+
+        SubnetUtils subnetUtils = new SubnetUtils( "192.168.1.14/24");
+
+        String address = subnetUtils.getInfo().getAddress();
+
+        boolean inRange = subnetUtils.getInfo().isInRange("192.168.1.13");
+
+        String lowAddress = subnetUtils.getInfo().getLowAddress();
+
+        String netmask = subnetUtils.getInfo().getNetmask();
+
+        String[] allAddresses = subnetUtils.getInfo().getAllAddresses();
+
+        SubnetUtils subnet1 = new SubnetUtils(lowAddress, netmask);
+
+        long addressCount = subnetUtils.getInfo().getAddressCountLong();
+
+
+
+        assert inRange;
+
+    }
 
 
 }

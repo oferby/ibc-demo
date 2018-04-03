@@ -4,6 +4,7 @@ public class EthernetPacket {
 
     private MACAddress sourceMac;
     private MACAddress destinationMac;
+    private short ttl = 10;
 
     public MACAddress getSourceMac() {
         return sourceMac;
@@ -19,5 +20,24 @@ public class EthernetPacket {
 
     public void setDestinationMac(MACAddress destinationMac) {
         this.destinationMac = destinationMac;
+    }
+
+    public short getTtl() {
+        return ttl;
+    }
+
+    public void setTtl() {
+        this.ttl-- ;
+        if (this.ttl == 0)
+            throw new RuntimeException("TTL expired");
+    }
+
+    @Override
+    public String toString() {
+        return "EthernetPacket{" +
+                "sourceMac=" + sourceMac +
+                ", destinationMac=" + destinationMac +
+                ", ttl=" + ttl +
+                '}';
     }
 }

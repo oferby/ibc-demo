@@ -1,13 +1,11 @@
-package com.huawei.ibc.model;
+package com.huawei.ibc.model.controller;
 
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.message.IntentStatus;
 import com.huawei.ibc.model.client.*;
 import com.huawei.ibc.model.client.Group;
 import com.huawei.ibc.model.common.NodeType;
-import com.huawei.ibc.model.db.DatabaseController;
 import com.huawei.ibc.model.db.node.*;
-import com.huawei.ibc.service.AddressController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
@@ -23,18 +21,20 @@ public class GraphController {
     private SimpMessagingTemplate template;
 
     @Autowired
-    private DatabaseController databaseController;
+    private DatabaseControllerImpl databaseController;
 
     @Autowired
-    private AddressController addressController;
+    private AddressControllerImpl addressController;
 
     public List<GraphEntity> getGraphEntity(IntentMessage intentMessage) {
 
         String intent = intentMessage.getIntent();
         List<GraphEntity> graphEntityList = new ArrayList<>();
         switch (intent) {
-            case "buildDemo":
+            case "buildDemo1":
                 return buildDemo(intentMessage);
+            case "buildDemo2":
+                return this.buildDemo2(intentMessage);
             case "addVm":
                 graphEntityList.add(addVm(intentMessage));
                 return graphEntityList;
@@ -167,6 +167,7 @@ public class GraphController {
     private void deleteAll(IntentMessage intentMessage) {
 
         databaseController.deleteAll();
+        addressController.clearAll();
         this.sendClearLocalIntent(intentMessage);
 
     }
@@ -292,7 +293,7 @@ public class GraphController {
 
 
         Internet internet = (Internet) databaseController.getNodeById("Internet");
-        graphEntityList.add(this.createGraphNode(internet));
+        graphEntityList.add(this.createGraphNode(internet, 1));
         Gateway gateway = databaseController.createGateway("gw1");
         graphEntityList.add(this.createGraphNode(gateway));
         databaseController.createNodeConnection(gateway.getId(), internet.getId());
@@ -308,6 +309,13 @@ public class GraphController {
         graphEntityList.add(this.createGraphEdge(gateway.getId(), "r4"));
 
         return graphEntityList;
+    }
+
+    private GraphNode createGraphNode(AbstractNode node, int weight) {
+
+        GraphNode graphNode = this.createGraphNode(node);
+        graphNode.setWeight(weight);
+        return graphNode;
     }
 
     private GraphNode createGraphNode(AbstractNode node) {
@@ -364,6 +372,70 @@ public class GraphController {
             application.setHost(vm);
             entities.add(this.createGraphEdge(application.getId(), vm.getId()));
         }
+
+        return entities;
+    }
+
+
+    private List<GraphEntity> buildDemo2(IntentMessage intentMessage) {
+
+        this.sendClearLocalIntent(intentMessage);
+
+        List<GraphEntity>entities = new ArrayList<>();
+
+        Router r1 = databaseController.createRouter("R1");
+        entities.add(this.createGraphNode(r1));
+
+        AbstractNode internet = databaseController.getNodeById("Internet");
+        databaseController.createNodeConnection(internet.getId(),r1.getId());
+        entities.add(this.createGraphEdge(internet.getId(),r1.getId()));
+
+        Switch sw1 = databaseController.createSwitch("SW1");
+        entities.add(this.createGraphNode(sw1));
+        databaseController.createNodeConnection(r1.getId(), sw1.getId());
+        entities.add(this.createGraphEdge(r1.getId(),sw1.getId()));
+
+        Switch sw2 = databaseController.createSwitch("SW2");
+        entities.add(this.createGraphNode(sw2));
+        databaseController.createNodeConnection(r1.getId(), sw2.getId());
+        entities.add(this.createGraphEdge(r1.getId(),sw2.getId()));
+
+        VirtualMachine web1 = databaseController.createVirtualMachine("WEB1");
+        entities.add(this.createGraphNode(web1));
+        databaseController.createNodeConnection(sw1.getId(),web1.getId());
+        entities.add(this.createGraphEdge(sw1.getId(),web1.getId()));
+
+        Application tomcat1 = databaseController.createApplication("Tomcat1", (short) 80);
+        entities.add(createGraphNode(tomcat1));
+        tomcat1.setHost(web1);
+        entities.add(createGraphEdge(web1.getId(),tomcat1.getId()));
+
+        VirtualMachine web2 = databaseController.createVirtualMachine("WEB2");
+        entities.add(this.createGraphNode(web2));
+        databaseController.createNodeConnection(sw1.getId(),web2.getId());
+        entities.add(this.createGraphEdge(sw1.getId(),web2.getId()));
+
+        Application tomcat2 = databaseController.createApplication("Tomcat2", (short) 80);
+        entities.add(createGraphNode(tomcat2));
+        tomcat2.setHost(web2);
+        entities.add(createGraphEdge(web2.getId(),tomcat2.getId()));
+
+        Firewall fw1 = databaseController.createFirewall("FW1");
+        entities.add(this.createGraphNode(fw1));
+        databaseController.createNodeConnection(sw2.getId(),fw1.getId());
+        entities.add(this.createGraphEdge(sw2.getId(),fw1.getId()));
+
+
+        VirtualMachine db1 = databaseController.createVirtualMachine("DB1");
+        entities.add(this.createGraphNode(db1));
+        databaseController.createNodeConnection(fw1.getId(),db1.getId());
+        entities.add(this.createGraphEdge(fw1.getId(),db1.getId()));
+
+        Application mySQL = databaseController.createApplication("MySQL", (short) 3306);
+        entities.add(createGraphNode(mySQL));
+        mySQL.setHost(db1);
+        entities.add(createGraphEdge(mySQL.getId(), db1.getId()));
+
 
         return entities;
     }

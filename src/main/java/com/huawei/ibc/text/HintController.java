@@ -4,7 +4,7 @@ import com.huawei.ibc.message.IntentMessage;
 
 public interface HintController {
 
-    public IntentMessage getHint(IntentMessage intentMessage);
+    IntentMessage getHint(IntentMessage intentMessage);
 
 
 

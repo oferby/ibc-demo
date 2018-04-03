@@ -45,4 +45,8 @@ public class GraphEntity {
         this.group = group.toString();
     }
 
+    public void setWeight(int weight) {
+        data.put("weight", weight+"");
+    }
+
 }
