@@ -1,25 +1,23 @@
 package com.huawei.ibc.model.db.protocol;
 
-import java.net.InetAddress;
-
 public class IpPacket extends EthernetPacket {
 
-    private InetAddress source;
-    private InetAddress destination;
+    protected String sourceIp;
+    protected String destinationIp;
 
-    public InetAddress getSource() {
-        return source;
+    public String getSourceIp() {
+        return sourceIp;
     }
 
-    public void setSource(InetAddress source) {
-        this.source = source;
+    public void setSourceIp(String sourceIp) {
+        this.sourceIp = sourceIp;
     }
 
-    public InetAddress getDestination() {
-        return destination;
+    public String getDestinationIp() {
+        return destinationIp;
     }
 
-    public void setDestination(InetAddress destination) {
-        this.destination = destination;
+    public void setDestinationIp(String destinationIp) {
+        this.destinationIp = destinationIp;
     }
 }

@@ -6,6 +6,8 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -134,5 +136,33 @@ public class HintFinder {
 
     }
 
+    @Test
+    public void extractPath() {
+
+        List<String> commandList = new LinkedList<>();
+        commandList.add("find path from node1 to node2");
+        commandList.add("find traffic from node1 to node2");
+        commandList.add("show path to node2 from node1 ");
+
+        Map<String,String> params;
+//        Pattern p = Pattern.compile("set\\s+policy\\s+([a-z0-9]+)\\s+(allow|deny).*?(from|to)\\s+([a-z0-9]+).*?(from|to)\\s+([a-z0-9]+)");
+        Pattern p = Pattern.compile("(find|show)\\s+(path|traffic)\\s+(from|to)\\s+([a-z0-9]+)\\s+(from|to)\\s+([a-z0-9]+)\\s*");
+
+        for (String command : commandList) {
+
+            params = new HashMap<>();
+
+            Matcher m = p.matcher(command);
+            boolean found = m.find();
+            assert found;
+
+            params.put(m.group(3), m.group(4));
+            params.put(m.group(5), m.group(6));
+
+            assert params.get("from").equals("node1");
+            assert params.get("to").equals("node2");
+        }
+
+    }
 
 }

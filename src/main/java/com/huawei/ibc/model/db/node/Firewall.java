@@ -2,10 +2,13 @@ package com.huawei.ibc.model.db.node;
 
 import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.protocol.DhcpRequestPacket;
-import com.huawei.ibc.model.db.protocol.DhcpResponsePacket;
 import com.huawei.ibc.model.db.protocol.EthernetPacket;
+import com.huawei.ibc.model.db.protocol.IpPacket;
+import com.huawei.ibc.model.db.protocol.PathDiscoveryPacket;
 
-public class Firewall extends AbstractDevice{
+import javax.sound.sampled.Port;
+
+public class Firewall extends AbstractDevice {
 
     public Firewall(String id) {
         super(id, NodeType.FIREWALL);
@@ -13,17 +16,38 @@ public class Firewall extends AbstractDevice{
 
 
     @Override
-    public void rx(ForwardingPort inPort, EthernetPacket packet) {
+    public void rx(ForwardingPort inPort, IpPacket packet) {
 
-        if (packet instanceof DhcpResponsePacket || packet instanceof DhcpRequestPacket ) {
-            for (ForwardingPort port : super.getPortList()) {
-                if (port.equals(inPort))
-                    continue;
-                port.tx(packet);
-            }
+
+        if (packet instanceof DhcpRequestPacket) {
+
+            ForwardingPort port = this.getOtherPort(inPort);
+            port.tx(packet);
+
+        } else if (packet instanceof PathDiscoveryPacket) {
+            PathDiscoveryPacket discoveryPacket = (PathDiscoveryPacket) packet;
+            discoveryPacket.addPathNode(this);
+            getOtherPort(inPort).tx(discoveryPacket);
 
         }
 
+    }
+
+    @Override
+    public void tx(IpPacket packet) {
+
+    }
+
+    private ForwardingPort getOtherPort(ForwardingPort port) {
+        ForwardingPort otherPort = null;
+        for (ForwardingPort forwardingPort : this.getPortList()) {
+            if (!forwardingPort.equals(port)) {
+                otherPort = forwardingPort;
+                break;
+            }
+        }
+
+        return otherPort;
     }
 
 }

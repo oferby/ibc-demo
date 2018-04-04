@@ -26,52 +26,44 @@ public class SimpleHintController implements HintController {
         commandSet.add("create demo 2");
         commandSet.add("start demo 2");
 
-        commandSet.add("add vm");
-        commandSet.add("create vm");
+        commandSet.addAll(this.hintString("vm"));
+        commandSet.addAll(this.hintString("virtual machine"));
+        commandSet.addAll(this.hintString("switch"));
+        commandSet.addAll(this.hintString("router"));
+        commandSet.addAll(this.hintString("firewall"));
+        commandSet.addAll(this.hintString("service"));
+        commandSet.addAll(this.hintString("policy"));
+        commandSet.addAll(this.hintString("application"));
 
-        commandSet.add("add switch");
-        commandSet.add("create switch");
-
-        commandSet.add("add router");
-        commandSet.add("create router");
-
-        commandSet.add("add firewall");
-        commandSet.add("create firewall");
-
-        commandSet.add("add service");
-        commandSet.add("create service");
         commandSet.add("show service");
         commandSet.add("display service");
         commandSet.add("show all services");
 
-        commandSet.add("add policy");
-        commandSet.add("create policy");
         commandSet.add("set policy");
         commandSet.add("show policy");
         commandSet.add("show all policies");
         commandSet.add("display policy");
-
-        commandSet.add("add application");
-        commandSet.add("create application");
 
         commandSet.add("connect");
         commandSet.add("disconnect");
 
         commandSet.add("clear");
         commandSet.add("delete all");
-
         commandSet.add("show all");
+
+        commandSet.add("find path");
+        commandSet.add("show path");
 
         patternMap.put(Pattern.compile("(build|create|start|add)\\s+demo\\s+1\\s*"), "buildDemo1");
         patternMap.put(Pattern.compile("(build|create|start|add)\\s+demo\\s+2\\s*"), "buildDemo2");
 
-        patternMap.put(Pattern.compile("(add|create)\\s+vm.+"), "addVm");
-        patternMap.put(Pattern.compile("(add|create)\\s+switch.+"), "addSwitch");
-        patternMap.put(Pattern.compile("(add|create)\\s+router.+"), "addRouter");
-        patternMap.put(Pattern.compile("(add|create)\\s+firewall.+"), "addFirewall");
-        patternMap.put(Pattern.compile("(add|create)\\s+service.+"), "addService");
-        patternMap.put(Pattern.compile("(add|create)\\s+application.+"), "addApplication");
-        patternMap.put(Pattern.compile("(add|create)\\s+policy.+"), "addPolicy");
+        patternMap.put(createEntityPattern("vm"), "addVm");
+        patternMap.put(createEntityPattern("switch"), "addSwitch");
+        patternMap.put(createEntityPattern("router"), "addRouter");
+        patternMap.put(createEntityPattern("firewall"), "addFirewall");
+        patternMap.put(createEntityPattern("service"), "addService");
+        patternMap.put(createEntityPattern("application"), "addApplication");
+        patternMap.put(createEntityPattern("policy"), "addPolicy");
 
         patternMap.put(Pattern.compile("(show|display)\\s+(all\\s+)?services\\s*"), "showService");
         patternMap.put(Pattern.compile("(show|display)\\s+(all\\s+)?(policies|policy)\\s*"), "showPolicies");
@@ -85,7 +77,24 @@ public class SimpleHintController implements HintController {
         patternMap.put(Pattern.compile("connect.+"), "connect");
         patternMap.put(Pattern.compile("disconnect.+"), "disconnect");
 
+        patternMap.put(Pattern.compile("(show|find)\\s+path.+"), "findPath");
+
     }
+
+    private Set<String> hintString(String entity){
+
+        Set<String> entityCommands = new TreeSet<>();
+        entityCommands.add("add " + entity);
+        entityCommands.add("create " + entity);
+        entityCommands.add("new " + entity);
+        entityCommands.add("start " + entity);
+        return entityCommands;
+    }
+
+    private Pattern createEntityPattern(String entity){
+        return Pattern.compile("(add|create|new|start)\\s+" + entity + ".+");
+    }
+
 
     public IntentMessage getHint(IntentMessage intentMessage) {
 
@@ -152,9 +161,9 @@ public class SimpleHintController implements HintController {
 
         switch (intent) {
             case "buildDemo1":
-            return this.buildDemo2(intentMessage, "buildDemo1");
+            return this.doneIntent(intentMessage, "buildDemo1");
             case "buildDemo2":
-                return this.buildDemo2(intentMessage, "buildDemo2");
+                return this.doneIntent(intentMessage, "buildDemo2");
             case "clear":
                 intentMessage.setStatus(IntentStatus.LOCAL);
                 intentMessage.setIntent("clear");
@@ -178,15 +187,17 @@ public class SimpleHintController implements HintController {
             case "addPolicy":
                 return this.getCreateNodeIntent(intentMessage, "addPolicy");
             case "showAll":
-                return this.getShowAllIntent(intentMessage, "showAll");
+                return this.doneIntent(intentMessage, "showAll");
             case "showPolicies":
-                return this.getShowAllIntent(intentMessage, "showPolicies");
+                return this.doneIntent(intentMessage, "showPolicies");
             case "showService":
-                return this.getShowAllIntent(intentMessage, "showService");
+                return this.doneIntent(intentMessage, "showService");
             case "setPolicy":
                 return this.getSetPolicyIntent(intentMessage);
             case "addApplication":
                 return this.createApplication(intentMessage);
+            case "findPath":
+                return this.findPath(intentMessage);
 
 
 
@@ -195,11 +206,6 @@ public class SimpleHintController implements HintController {
         return intentMessage;
     }
 
-    private IntentMessage getShowAllIntent(IntentMessage intentMessage, String intent) {
-        intentMessage.setStatus(IntentStatus.DONE);
-        intentMessage.setIntent(intent);
-        return intentMessage;
-    }
 
     private IntentMessage removeNodeConnectionIntent(IntentMessage intentMessage) {
 
@@ -255,14 +261,13 @@ public class SimpleHintController implements HintController {
 
     private IntentMessage getCreateNodeIntent(IntentMessage intentMessage, String intent) {
         String command = intentMessage.getHint();
-        intentMessage.setStatus(IntentStatus.DONE);
-        intentMessage.setIntent(intent);
+
         String nodeName = this.getNodeName(command);
         if (nodeName != null) {
             intentMessage.addParam("name", nodeName);
         }
-        return intentMessage;
 
+        return doneIntent(intentMessage, intent);
     }
 
     private IntentMessage getSetPolicyIntent(IntentMessage intentMessage){
@@ -338,10 +343,24 @@ public class SimpleHintController implements HintController {
         return strings[2];
     }
 
-    private IntentMessage buildDemo2(IntentMessage intentMessage, String demoIntent) {
-        intentMessage.setIntent(demoIntent);
+    private IntentMessage doneIntent(IntentMessage intentMessage, String intent) {
+        intentMessage.setIntent(intent);
         intentMessage.setStatus(IntentStatus.DONE);
         return intentMessage;
     }
+
+    private IntentMessage findPath(IntentMessage intentMessage){
+
+        Pattern p = Pattern.compile("(find|show)\\s+(path|traffic)\\s+(from|to)\\s+([a-z0-9]+)\\s+(from|to)\\s+([a-z0-9]+)\\s*");
+        Matcher m = p.matcher(intentMessage.getHint());
+        boolean found = m.find();
+        assert found;
+
+        intentMessage.addParam(m.group(3), m.group(4));
+        intentMessage.addParam(m.group(5), m.group(6));
+        return doneIntent(intentMessage, "findPath");
+    }
+
+
 
 }

@@ -5,9 +5,7 @@ import org.apache.commons.net.util.SubnetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class EthernetPort extends PromiscuousPort {
@@ -16,9 +14,9 @@ public class EthernetPort extends PromiscuousPort {
 
     private MACAddress macAddress;
     private SubnetUtils subnetUtils;
+    protected String routerIp;
     private String[] ipAddressAllocation;
     private Set<String> allocatedIpAddress;
-
 
 
     public EthernetPort(MACAddress macAddress, AbstractDevice device) {
@@ -27,55 +25,44 @@ public class EthernetPort extends PromiscuousPort {
     }
 
     @Override
-    public void rx(EthernetPacket packet) {
+    public void rx(IpPacket packet) {
 
         logger.debug("got packet: " + packet);
 
-        if (packet.getDestinationMac().isBroadcast()) {
-            if (packet instanceof DhcpRequestPacket && super.device instanceof Router) {
-                if ( ipAddressAllocation == null) {
-                    ipAddressAllocation = subnetUtils.getInfo().getAllAddresses();
-                    allocatedIpAddress = new HashSet<>();
-                }
+        this.addToArpTable(packet);
 
-                for (String ipAddress : ipAddressAllocation) {
-                    if (!allocatedIpAddress.contains(ipAddress)) {
-                        allocatedIpAddress.add(ipAddress);
-                        DhcpResponsePacket responsePacket = new DhcpResponsePacket(macAddress, packet.getSourceMac(),
-                                new SubnetUtils(ipAddress,subnetUtils.getInfo().getNetmask()));
-                        this.tx(responsePacket);
-                        return;
-                    }
-                }
-
-            }
-        } else if (packet.getDestinationMac().equals(macAddress)) {
-
-            if (packet instanceof DhcpResponsePacket) {
-                subnetUtils = ((DhcpResponsePacket) packet).getSubnetUtils();
-            }
-
+        if (packet.getDestinationMac().isBroadcast() || packet.getDestinationMac().equals(this.macAddress)) {
+            this.device.rx(this, packet);
+            return;
         }
 
     }
 
     @Override
-    public void tx(EthernetPacket packet) {
+    public void tx(IpPacket packet) {
 
         packet.setSourceMac(this.macAddress);
         super.tx(packet);
+        this.addToArpTable(packet);
+
 
     }
+
+    public void addToArpTable(IpPacket packet){
+        if (packet.getSourceIp() != null && packet.getSourceMac() != null)
+            this.device.arpTable.put(packet.getSourceIp(), packet.getSourceMac());
+    }
+
 
     public MACAddress getMacAddress() {
         return macAddress;
     }
 
-    public void setIpAddress(String cidr){
+    public void setIpAddress(String cidr) {
         subnetUtils = new SubnetUtils(cidr);
     }
 
-    public void setIpAddress(SubnetUtils address){
+    public void setIpAddress(SubnetUtils address) {
         subnetUtils = address;
 
     }
@@ -84,4 +71,47 @@ public class EthernetPort extends PromiscuousPort {
         return subnetUtils;
     }
 
+    public String getIpAddress() {
+        return subnetUtils.getInfo().getAddress();
+    }
+
+    public String getNetmask(){
+        return subnetUtils.getInfo().getNetmask();
+    }
+
+    public void setMacAddress(MACAddress macAddress) {
+        this.macAddress = macAddress;
+    }
+
+    public void setSubnetUtils(SubnetUtils subnetUtils) {
+        this.subnetUtils = subnetUtils;
+    }
+
+    public String getRouterIp() {
+        return routerIp;
+    }
+
+    public void setRouterIp(String routerIp) {
+        this.routerIp = routerIp;
+    }
+
+    public String[] getIpAddressAllocation() {
+        return ipAddressAllocation;
+    }
+
+    public void setIpAddressAllocation(String[] ipAddressAllocation) {
+        this.ipAddressAllocation = ipAddressAllocation;
+    }
+
+    public Set<String> getAllocatedIpAddress() {
+        return allocatedIpAddress;
+    }
+
+    public void setAllocatedIpAddress(Set<String> allocatedIpAddress) {
+        this.allocatedIpAddress = allocatedIpAddress;
+    }
+
+    public boolean isInRange(String destination){
+        return subnetUtils.getInfo().isInRange(destination);
+    }
 }

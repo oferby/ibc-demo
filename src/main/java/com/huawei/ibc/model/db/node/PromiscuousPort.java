@@ -1,8 +1,10 @@
-package com.huawei.ibc.model.db.protocol;
+package com.huawei.ibc.model.db.node;
 
 import com.huawei.ibc.model.db.node.AbstractDevice;
 import com.huawei.ibc.model.db.node.EthernetPort;
 import com.huawei.ibc.model.db.node.ForwardingPort;
+import com.huawei.ibc.model.db.protocol.EthernetPacket;
+import com.huawei.ibc.model.db.protocol.IpPacket;
 
 public class PromiscuousPort implements ForwardingPort{
 
@@ -14,14 +16,14 @@ public class PromiscuousPort implements ForwardingPort{
     }
 
     @Override
-    public void rx(EthernetPacket packet) {
+    public void rx(IpPacket packet) {
 
         device.rx(this, packet);
 
     }
 
     @Override
-    public void tx(EthernetPacket packet) {
+    public void tx(IpPacket packet) {
 
         packet.setTtl();
         connectedTo.rx(packet);

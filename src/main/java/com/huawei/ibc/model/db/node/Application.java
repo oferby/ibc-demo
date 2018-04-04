@@ -2,6 +2,7 @@ package com.huawei.ibc.model.db.node;
 
 import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.protocol.EthernetPacket;
+import com.huawei.ibc.model.db.protocol.IpPacket;
 
 public class Application extends AbstractNode implements ForwardingElement {
 
@@ -13,14 +14,14 @@ public class Application extends AbstractNode implements ForwardingElement {
     }
 
     @Override
-    public void rx(EthernetPacket packet) {
+    public void rx(IpPacket packet) {
 
 
 
     }
 
     @Override
-    public void tx(EthernetPacket packet) {
+    public void tx(IpPacket packet) {
         host.rx(host.getPortList().get(0), packet);
     }
 

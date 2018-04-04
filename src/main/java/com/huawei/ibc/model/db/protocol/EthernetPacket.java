@@ -2,8 +2,9 @@ package com.huawei.ibc.model.db.protocol;
 
 public class EthernetPacket {
 
-    private MACAddress sourceMac;
-    private MACAddress destinationMac;
+    private boolean ack = false;
+    protected MACAddress sourceMac;
+    protected MACAddress destinationMac;
     private short ttl = 10;
 
     public MACAddress getSourceMac() {
@@ -30,6 +31,14 @@ public class EthernetPacket {
         this.ttl-- ;
         if (this.ttl == 0)
             throw new RuntimeException("TTL expired");
+    }
+
+    public void setAck(){
+        this.ack = true;
+    }
+
+    public boolean isAck() {
+        return ack;
     }
 
     @Override

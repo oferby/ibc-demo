@@ -2,6 +2,7 @@ package com.huawei.ibc.model.db.node;
 
 import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.db.protocol.EthernetPacket;
+import com.huawei.ibc.model.db.protocol.IpPacket;
 
 public class Gateway extends AbstractDevice {
     public Gateway(String id) {
@@ -10,7 +11,12 @@ public class Gateway extends AbstractDevice {
 
 
     @Override
-    public void rx(ForwardingPort inPort, EthernetPacket packet) {
+    public void rx(ForwardingPort inPort, IpPacket packet) {
+
+    }
+
+    @Override
+    public void tx(IpPacket packet) {
 
     }
 

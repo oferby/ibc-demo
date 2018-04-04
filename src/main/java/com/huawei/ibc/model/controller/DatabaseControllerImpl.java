@@ -41,11 +41,11 @@ public class DatabaseControllerImpl {
     }
 
     public AbstractNode getNodeById(String id) {
-        return nodeMap.get(id);
+        return nodeMap.get(id.toLowerCase());
     }
 
     public <T extends AbstractNode> T getNodeByIdAndType(String id, Class<T> type) {
-        return type.cast(nodeMap.get(id));
+        return type.cast(nodeMap.get(id.toLowerCase()));
     }
 
 
@@ -53,11 +53,11 @@ public class DatabaseControllerImpl {
 
         String name = "Internet";
         Internet internet = new Internet(name);
-        nodeMap.put(name, internet);
+        nodeMap.put(name.toLowerCase(), internet);
 
         name = "All";
         Group all = new Group(name, GroupType.GENERAL);
-        groupMap.put(name, all);
+        groupMap.put(name.toLowerCase(), all);
     }
 
     private void validateUniqueName(String name) {
@@ -69,7 +69,7 @@ public class DatabaseControllerImpl {
 
         this.validateUniqueName(name);
         VirtualMachine vm = new VirtualMachine(name);
-        nodeMap.put(name, vm);
+        nodeMap.put(name.toLowerCase(), vm);
 
         return vm;
 
@@ -79,7 +79,7 @@ public class DatabaseControllerImpl {
 
         this.validateUniqueName(name);
         Router router = new Router(name);
-        nodeMap.put(name, router);
+        nodeMap.put(name.toLowerCase(), router);
 
         return router;
     }
@@ -88,14 +88,14 @@ public class DatabaseControllerImpl {
 
         this.validateUniqueName(name);
         Switch aSwitch = new Switch(name);
-        nodeMap.put(name, aSwitch);
+        nodeMap.put(name.toLowerCase(), aSwitch);
         return aSwitch;
     }
 
     public Firewall createFirewall(String name) {
         this.validateUniqueName(name);
         Firewall firewall = new Firewall(name);
-        nodeMap.put(name, firewall);
+        nodeMap.put(name.toLowerCase(), firewall);
         return firewall;
 
     }
@@ -103,22 +103,22 @@ public class DatabaseControllerImpl {
     public Gateway createGateway(String name) {
         this.validateUniqueName(name);
         Gateway gateway = new Gateway(name);
-        nodeMap.put(name, gateway);
+        nodeMap.put(name.toLowerCase(), gateway);
         return gateway;
     }
 
     public Application createApplication(String name, Short listerOnPort) {
         Application application = new Application(name);
         application.setListenOnPort(listerOnPort);
-        nodeMap.put(name, application);
+        nodeMap.put(name.toLowerCase(), application);
         return application;
     }
 
     public void createNodeConnection(String sourceId, String targetId) {
 
-        AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId);
+        AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId.toLowerCase());
 
-        AbstractDevice targetDevice = (AbstractDevice) nodeMap.get(targetId);
+        AbstractDevice targetDevice = (AbstractDevice) nodeMap.get(targetId.toLowerCase());
 
         if (targetDevice == null || sourceDevice == null) {
             throw new RuntimeException("could not connect " + sourceId + " and " + targetId);
@@ -137,10 +137,10 @@ public class DatabaseControllerImpl {
         }
 
         if (sourceDevice instanceof VirtualMachine) {
-            this.addSubnetToHost((EthernetPort) sourcePort);
+            this.addSubnetToHost((VirtualMachine) sourceDevice, (EthernetPort) sourcePort);
 
         } else if (targetDevice instanceof VirtualMachine){
-            this.addSubnetToHost((EthernetPort) targetPort);
+            this.addSubnetToHost((VirtualMachine) targetDevice, (EthernetPort) targetPort);
         }
     }
 
@@ -157,11 +157,11 @@ public class DatabaseControllerImpl {
 
     }
 
-    private void addSubnetToHost(EthernetPort hostPort){
+    private void addSubnetToHost(VirtualMachine host, EthernetPort hostPort){
 
         taskExecutor.execute(() -> {
             DhcpRequestPacket packet = new DhcpRequestPacket();
-            hostPort.tx(packet);
+            host.tx(packet, hostPort);
         });
 
     }
@@ -170,11 +170,11 @@ public class DatabaseControllerImpl {
 
     public void deleteNodeConnection(String sourceId, String targetId) {
 
-        AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId);
+        AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId.toLowerCase());
         if (sourceDevice == null)
             throw new RuntimeException("source id not found");
 
-        AbstractDevice targetDevice = (AbstractDevice) nodeMap.get(targetId);
+        AbstractDevice targetDevice = (AbstractDevice) nodeMap.get(targetId.toLowerCase());
         if (targetDevice == null) {
             throw new RuntimeException("target id not found");
         }
@@ -204,11 +204,11 @@ public class DatabaseControllerImpl {
     public void createGroup(String groupId, GroupType groupType) {
 
         this.validateUniqueName(groupId);
-        groupMap.put(groupId, new Group(groupId, groupType));
+        groupMap.put(groupId.toLowerCase(), new Group(groupId, groupType));
     }
 
     public Group getGroup(String id) {
-        return groupMap.get(id);
+        return groupMap.get(id.toLowerCase());
     }
 
     public void deleteGroup(String id) {
@@ -217,7 +217,7 @@ public class DatabaseControllerImpl {
 
     public void addNodesToGroup(String groupId, Set<AbstractNode> nodeSet) {
 
-        Group group = groupMap.get(groupId);
+        Group group = groupMap.get(groupId.toLowerCase());
         Set<AbstractNode> nodes = group.getNodeSet();
         if (nodes == null) {
             nodes = new HashSet<>();
@@ -228,17 +228,17 @@ public class DatabaseControllerImpl {
     }
 
     public Set<AbstractNode> getGroupNodes(String groupId) {
-        return groupMap.get(groupId).getNodeSet();
+        return groupMap.get(groupId.toLowerCase()).getNodeSet();
     }
 
     public Policy createPolicy(String policyName) {
         Policy policy = new Policy(policyName);
-        policyMap.put(policyName, policy);
+        policyMap.put(policyName.toLowerCase(), policy);
         return policy;
     }
 
     public Policy getPolicy(String name) {
-        return policyMap.get(name);
+        return policyMap.get(name.toLowerCase());
     }
 
     public Collection<Policy> getAllPolicies() {
