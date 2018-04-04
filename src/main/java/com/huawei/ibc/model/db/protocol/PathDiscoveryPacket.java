@@ -7,7 +7,7 @@ import java.util.List;
 
 public class PathDiscoveryPacket extends TcpPacket{
 
-    private List<AbstractNode> pathNodes = new LinkedList<>();
+    private LinkedList<AbstractNode> pathNodes = new LinkedList<>();
 
     public PathDiscoveryPacket() {
     }
@@ -20,7 +20,7 @@ public class PathDiscoveryPacket extends TcpPacket{
 
     }
 
-    public List<AbstractNode> getPathNodes() {
+    public LinkedList<AbstractNode> getPathNodes() {
         return pathNodes;
     }
 

@@ -4,6 +4,7 @@ import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.message.IntentStatus;
 import com.huawei.ibc.model.client.*;
 import com.huawei.ibc.model.client.Group;
+import com.huawei.ibc.model.common.AccessType;
 import com.huawei.ibc.model.common.ConnectionMessage;
 import com.huawei.ibc.model.common.NodeType;
 import com.huawei.ibc.model.common.TopologyMessage;

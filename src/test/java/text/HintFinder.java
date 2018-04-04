@@ -1,10 +1,18 @@
 package text;
 
+import com.huawei.ibc.model.common.AccessType;
+import com.huawei.ibc.model.common.FirewallRule;
+import com.huawei.ibc.model.db.node.EthernetPort;
+import com.huawei.ibc.model.db.node.Firewall;
+import com.huawei.ibc.model.db.node.PromiscuousPort;
+import com.huawei.ibc.model.db.protocol.IpPacket;
+import com.huawei.ibc.model.db.protocol.TcpPacket;
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.validation.constraints.Null;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -164,5 +172,141 @@ public class HintFinder {
         }
 
     }
+
+    @Test
+    public void testFirewall(){
+
+
+        SubnetUtils subnetUtils = new SubnetUtils( "192.168.1.14/24");
+
+        SubnetUtils in = new SubnetUtils( "192.168.1.16/32");
+        in.setInclusiveHostCount(true);
+
+        boolean inRange = subnetUtils.getInfo().isInRange(in.getInfo().getAddress());
+
+        assert inRange;
+
+        String lowAddress = in.getInfo().getLowAddress();
+
+        String netmask = in.getInfo().getNetmask();
+
+        String[] allAddresses = in.getInfo().getAllAddresses();
+
+        assert in.getInfo().isInRange("192.168.1.16");
+
+    }
+
+    @Test
+    public void testFirewallRules(){
+
+        Firewall firewall = new Firewall("fw1");
+
+        for (int i = 50; i < 100; i++) {
+            firewall.addRule(i,null,null,null,null,null);
+        }
+
+        for (int i = 0; i < 50; i++) {
+            firewall.addRule(i,null,null,null,null,null);
+        }
+
+        FirewallRule last = null;
+        for (FirewallRule rule : firewall.getFirewallRules()) {
+            if (last == null){
+                last = rule;
+                continue;
+            }
+
+            assert rule.getPriority() > last.getPriority();
+
+            last = rule;
+        }
+
+
+    }
+
+    @Test
+    public void testFirewallRules1(){
+
+        IpPacket ipPacket = new IpPacket();
+        ipPacket.setSourceIp("192.168.1.14");
+        ipPacket.setDestinationIp("192.168.1.100");
+
+        Firewall firewall = new Firewall("fw1");
+        PromiscuousPort port = new PromiscuousPort(null);
+
+        SubnetUtils subnetUtils = new SubnetUtils("0.0.0.0/0");
+
+        firewall.addRule(10, AccessType.ALLOW, "0.0.0.0/0", "0.0.0.0/0", null, null);
+
+        boolean pass = true;
+        try {
+            firewall.rx(port, ipPacket);
+            pass = false;
+        } catch (NullPointerException e){
+
+        }
+
+        assert pass;
+
+        firewall.addRule(9, AccessType.DENY, "0.0.0.0/0", "0.0.0.0/0", null, null);
+
+        pass = false;
+        try {
+            firewall.rx(port, ipPacket);
+            pass = true;
+        } catch (NullPointerException e){
+
+        }
+
+        assert pass;
+
+
+        firewall.addRule(8, AccessType.ALLOW, "192.168.1.14/32", "0.0.0.0/0", null, null);
+
+        pass = true;
+        try {
+            firewall.rx(port, ipPacket);
+            pass = false;
+        } catch (NullPointerException e){
+
+        }
+
+        assert pass;
+
+        TcpPacket tcpPacket = new TcpPacket();
+        tcpPacket.setSourceIp("192.168.1.14");
+        tcpPacket.setDestinationIp("192.168.1.100");
+        tcpPacket.setDestinationPort((short) 8080);
+        tcpPacket.setSourcePort((short) 32456);
+
+        firewall.addRule(7, AccessType.ALLOW, "0.0.0.0/0", "0.0.0.0/0", null, (short) 8080);
+
+        pass = true;
+        try {
+            firewall.rx(port, ipPacket);
+            pass = false;
+        } catch (NullPointerException e){
+
+        }
+
+        assert pass;
+
+        firewall.addRule(6, AccessType.DENY, "192.168.1.14/32", "192.168.1.0/24", (short) 32456, null);
+
+        pass = false;
+        try {
+            firewall.rx(port, ipPacket);
+            pass = true;
+        } catch (NullPointerException e){
+
+        }
+
+        assert pass;
+
+
+
+    }
+
+
 
 }

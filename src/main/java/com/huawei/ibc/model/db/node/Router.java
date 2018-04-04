@@ -43,7 +43,7 @@ public class Router extends AbstractDevice implements ForwardingDevice {
     }
 
 
-    private void handleDhcpRequest(EthernetPort port, DhcpRequestPacket packet) {
+    private synchronized void handleDhcpRequest(EthernetPort port, DhcpRequestPacket packet) {
 
         if (port.getAllocatedIpAddress() == null) {
             port.setAllocatedIpAddress(new HashSet<>());

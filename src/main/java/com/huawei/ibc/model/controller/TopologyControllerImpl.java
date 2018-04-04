@@ -19,7 +19,6 @@ public class TopologyControllerImpl {
 
         AbstractNode sNode = databaseController.getNodeById(source);
         AbstractNode dNode = databaseController.getNodeById(destination);
-        topologyMessage.addDevice(dNode);
 
         assert sNode != null && dNode != null;
 
@@ -56,6 +55,8 @@ public class TopologyControllerImpl {
 
         sourceVm.tx(packet);
 
+
+
         AbstractNode previousNode = null;
         for (AbstractNode node : packet.getPathNodes()) {
             topologyMessage.addDevice(node);
@@ -63,6 +64,10 @@ public class TopologyControllerImpl {
                 topologyMessage.addConnection(previousNode.getId(),node.getId());
             }
             previousNode = node;
+        }
+
+        if (!packet.getPathNodes().peekLast().equals(dNode)) {
+            topologyMessage.addDevice(dNode);
         }
 
         return topologyMessage;

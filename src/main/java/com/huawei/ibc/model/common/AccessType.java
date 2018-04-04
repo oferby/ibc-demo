@@ -1,4 +1,4 @@
-package com.huawei.ibc.model.client;
+package com.huawei.ibc.model.common;
 
 public enum AccessType {
 

@@ -1,11 +1,7 @@
 package com.huawei.ibc.model.db.node;
 
-import com.huawei.ibc.model.client.AccessType;
+import com.huawei.ibc.model.common.AccessType;
 import com.huawei.ibc.model.common.NodeType;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Policy extends AbstractNode {
 
