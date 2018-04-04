@@ -23,13 +23,15 @@ public class Firewall extends AbstractDevice {
     @Override
     public void rx(ForwardingPort inPort, IpPacket packet) {
 
-        if (!this.isAllowed(packet))
-            return;
 
         if (packet instanceof PathDiscoveryPacket) {
             PathDiscoveryPacket discoveryPacket = (PathDiscoveryPacket) packet;
             discoveryPacket.addPathNode(this);
         }
+
+
+        if (!this.isAllowed(packet))
+            return;
 
         getOtherPort(inPort).tx(packet);
 
@@ -43,9 +45,6 @@ public class Firewall extends AbstractDevice {
     private boolean isAllowed(IpPacket packet) {
 
         if (packet instanceof DhcpRequestPacket)
-            return true;
-
-        if (packet instanceof PathDiscoveryPacket)
             return true;
 
         if (packet instanceof TcpPacket)
