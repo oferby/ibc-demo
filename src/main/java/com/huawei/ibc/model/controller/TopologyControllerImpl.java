@@ -18,6 +18,30 @@ public class TopologyControllerImpl {
 
         TopologyMessage topologyMessage = new TopologyMessage();
 
+        PathDiscoveryPacket packet = this.getDiscoveryPacket(source, destination);
+
+        AbstractNode previousNode = null;
+        for (AbstractNode node : packet.getPathNodes()) {
+            topologyMessage.addDevice(node);
+            if (previousNode != null) {
+                topologyMessage.addConnection(previousNode.getId(), node.getId());
+            }
+            previousNode = node;
+        }
+
+
+        AbstractNode dNode = databaseController.getNodeById(destination);
+        if (!packet.getPathNodes().peekLast().equals(dNode)) {
+            topologyMessage.addDevice(dNode);
+        }
+
+        return topologyMessage;
+
+    }
+
+
+    private PathDiscoveryPacket getDiscoveryPacket(String source, String destination) {
+
         AbstractNode sNode = databaseController.getNodeById(source);
         AbstractNode dNode = databaseController.getNodeById(destination);
 
@@ -32,7 +56,7 @@ public class TopologyControllerImpl {
 
             this.addSourceAddresses((VirtualMachine) sNode, packet);
             sourceVm = (VirtualMachine) sNode;
-            startingPort =this.addSourceAddresses(sourceVm, packet);
+            startingPort = this.addSourceAddresses(sourceVm, packet);
 
         } else if (sNode instanceof Application) {
 
@@ -53,25 +77,9 @@ public class TopologyControllerImpl {
 
         assert packet.getDestinationIp() != null && packet.getDestinationIp() != null && startingPort != null;
 
-
         sourceVm.tx(packet);
 
-
-
-        AbstractNode previousNode = null;
-        for (AbstractNode node : packet.getPathNodes()) {
-            topologyMessage.addDevice(node);
-            if (previousNode != null){
-                topologyMessage.addConnection(previousNode.getId(),node.getId());
-            }
-            previousNode = node;
-        }
-
-        if (!packet.getPathNodes().peekLast().equals(dNode)) {
-            topologyMessage.addDevice(dNode);
-        }
-
-        return topologyMessage;
+        return packet;
 
     }
 
@@ -96,9 +104,28 @@ public class TopologyControllerImpl {
         packet.setDestinationIp(ipAddress);
     }
 
-    public void addFirewallRule(AccessType type, String fromNode, String toNode){
+    public void addFirewallRule(AccessType type, String fromNode, String toNode) {
+
+        if (type.equals(AccessType.ALLOW)) {
+
+            PathDiscoveryPacket packet = this.getDiscoveryPacket(fromNode, toNode);
+
+            VirtualMachine dNode = (VirtualMachine) databaseController.getNodeById(toNode);
+            if (!packet.getPathNodes().peekLast().equals(dNode)) {
+
+                if (packet.getPathNodes().peekLast() instanceof Firewall) {
+                    Firewall firewall = (Firewall) packet.getPathNodes().peekLast();
+                    int currentPriority = firewall.getFirewallRules().iterator().next().getPriority();
+                    firewall.addRule(--currentPriority, type, packet.getSourceIp()+"/32", dNode.getIpAddress() + "/32",null,null);
+                    return;
+                }
+
+            }
 
 
+        }
+
+        throw new RuntimeException("not supported!");
 
     }
 

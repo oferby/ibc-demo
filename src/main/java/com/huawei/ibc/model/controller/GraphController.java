@@ -90,7 +90,7 @@ public class GraphController {
     private void addFirewallRule(IntentMessage intentMessage){
 
         String access = intentMessage.getParamValue("access");
-        AccessType accessType = AccessType.valueOf(access);
+        AccessType accessType = AccessType.valueOf(access.toUpperCase());
 
         String all = intentMessage.getParamValue("all");
         String from = intentMessage.getParamValue("from");

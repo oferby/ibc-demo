@@ -54,6 +54,11 @@ public class SimpleHintController implements HintController {
         commandSet.add("find path");
         commandSet.add("show path");
 
+        commandSet.add("allow traffic");
+        commandSet.add("allow all traffic");
+        commandSet.add("deny traffic");
+        commandSet.add("deny all traffic");
+
         patternMap.put(Pattern.compile("(build|create|start|add)\\s+demo\\s+1\\s*"), "buildDemo1");
         patternMap.put(Pattern.compile("(build|create|start|add)\\s+demo\\s+2\\s*"), "buildDemo2");
 
@@ -78,6 +83,8 @@ public class SimpleHintController implements HintController {
         patternMap.put(Pattern.compile("disconnect.+"), "disconnect");
 
         patternMap.put(Pattern.compile("(show|find)\\s+path.+"), "findPath");
+
+        patternMap.put(Pattern.compile("(allow|deny)\\s+(all\\s+)?traffic\\s+(from|to)\\s+([a-z0-9]+).*"), "addFirewallRule");
 
     }
 
@@ -198,8 +205,8 @@ public class SimpleHintController implements HintController {
                 return this.createApplication(intentMessage);
             case "findPath":
                 return this.findPath(intentMessage);
-
-
+            case "addFirewallRule":
+                return this.addFirewallRule(intentMessage);
 
         }
 
@@ -207,8 +214,6 @@ public class SimpleHintController implements HintController {
     }
 
     private IntentMessage addFirewallRule(IntentMessage intentMessage) {
-
-
 
         String command = intentMessage.getHint();
 
@@ -249,7 +254,7 @@ public class SimpleHintController implements HintController {
 
         }
 
-        this.doneIntent(intentMessage, "");
+        this.doneIntent(intentMessage, "addFirewallRule");
         return intentMessage;
     }
 
