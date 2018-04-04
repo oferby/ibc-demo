@@ -174,6 +174,68 @@ public class HintFinder {
     }
 
     @Test
+    public void testFirewallRule(){
+
+        List<String> commandList = new LinkedList<>();
+        commandList.add("allow traffic from web1 to db1");
+        commandList.add("allow all traffic from web1 to db1");
+        commandList.add("deny all traffic to db1");
+        commandList.add("deny traffic from web1 to db1");
+        commandList.add("deny traffic from web1");
+        commandList.add("allow all traffic to db1");
+
+
+        for (String command : commandList) {
+
+            Map<String,String> params;
+            Pattern p = Pattern.compile("(allow|deny)\\s+(all\\s+)?traffic\\s+(from|to)\\s+([a-z0-9]+)\\s+(from|to)\\s+([a-z0-9]+)\\s*");
+
+            params = new HashMap<>();
+
+            Matcher m = p.matcher(command);
+            boolean found = m.find();
+
+            if (found) {
+
+                params.put("access", m.group(1));
+
+                if (m.group(2)!=null)
+                    params.put("all", "true");
+
+                params.put(m.group(3), m.group(4));
+                params.put(m.group(5), m.group(6));
+
+                continue;
+
+            }
+
+            p = Pattern.compile("(allow|deny)\\s+(all\\s+)?traffic\\s+(from|to)\\s+([a-z0-9]+)\\s*");
+
+            m = p.matcher(command);
+            found = m.find();
+
+            if (found) {
+
+                params.put("access", m.group(1));
+
+                if (m.group(2)!=null)
+                    params.put("all", "true");
+
+                params.put(m.group(3), m.group(4));
+
+                continue;
+
+            }
+
+        }
+
+//        assert params.get("access").equals("allow");
+//        assert params.get("from").equals("node1");
+//        assert params.get("to").equals("node2");
+
+    }
+
+    @Test
     public void testFirewall(){
 
 

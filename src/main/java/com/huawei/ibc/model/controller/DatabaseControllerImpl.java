@@ -159,10 +159,10 @@ public class DatabaseControllerImpl {
 
     private void addSubnetToHost(VirtualMachine host, EthernetPort hostPort){
 
-        taskExecutor.execute(() -> {
+//        taskExecutor.execute(() -> {
             DhcpRequestPacket packet = new DhcpRequestPacket();
             host.tx(packet, hostPort);
-        });
+//        });
 
     }
 

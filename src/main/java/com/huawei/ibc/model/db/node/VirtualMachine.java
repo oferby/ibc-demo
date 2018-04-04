@@ -39,6 +39,7 @@ public class VirtualMachine extends AbstractDevice implements ForwardingDevice {
             DhcpRequestPacket dhcpRequestPacket = (DhcpRequestPacket) packet;
             port.setIpAddress(dhcpRequestPacket.getSubnetUtils());
             port.routerIp = packet.getSourceIp();
+            this.arpTable.put(port.routerIp, packet.getSourceMac());
         }
 
     }
@@ -64,6 +65,10 @@ public class VirtualMachine extends AbstractDevice implements ForwardingDevice {
         }
 
 
+    }
+
+    public String getIpAddress(){
+        return getPort(0).getIpAddress();
     }
 
 

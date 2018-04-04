@@ -43,13 +43,11 @@ public class EthernetPort extends PromiscuousPort {
 
         packet.setSourceMac(this.macAddress);
         super.tx(packet);
-        this.addToArpTable(packet);
-
 
     }
 
     public void addToArpTable(IpPacket packet){
-        if (packet.getSourceIp() != null && packet.getSourceMac() != null)
+        if (packet.getSourceIp() != null && packet.getSourceMac() != null && this.isInRange(packet.getSourceIp()))
             this.device.arpTable.put(packet.getSourceIp(), packet.getSourceMac());
     }
 

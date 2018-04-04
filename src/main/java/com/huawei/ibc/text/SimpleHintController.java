@@ -206,6 +206,52 @@ public class SimpleHintController implements HintController {
         return intentMessage;
     }
 
+    private IntentMessage addFirewallRule(IntentMessage intentMessage) {
+
+
+
+        String command = intentMessage.getHint();
+
+        Pattern p = Pattern.compile("(allow|deny)\\s+(all\\s+)?traffic\\s+(from|to)\\s+([a-z0-9]+)\\s+(from|to)\\s+([a-z0-9]+)\\s*");
+
+        Matcher m = p.matcher(command);
+        boolean found = m.find();
+
+        if (found) {
+
+            intentMessage.addParam("access", m.group(1));
+
+            if (m.group(2)!=null)
+                intentMessage.addParam("all", "true");
+
+            intentMessage.addParam(m.group(3), m.group(4));
+            intentMessage.addParam(m.group(5), m.group(6));
+
+        } else {
+
+            p = Pattern.compile("(allow|deny)\\s+(all\\s+)?traffic\\s+(from|to)\\s+([a-z0-9]+)\\s*");
+
+            m = p.matcher(command);
+            found = m.find();
+
+            if (found) {
+                intentMessage.addParam("access", m.group(1));
+
+                if (m.group(2)!=null)
+                    intentMessage.addParam("all", "true");
+
+                intentMessage.addParam(m.group(3), m.group(4));
+
+            } else {
+
+                throw new RuntimeException("could not parse firewall rule");
+            }
+
+        }
+
+        this.doneIntent(intentMessage, "");
+        return intentMessage;
+    }
 
     private IntentMessage removeNodeConnectionIntent(IntentMessage intentMessage) {
 

@@ -77,10 +77,27 @@ public class GraphController {
                 return graphEntityList;
             case "findPath":
                 return this.findPath(intentMessage);
+            case "addFirewallRule":
+                this.addFirewallRule(intentMessage);
+                return null;
 
         }
 
         throw new RuntimeException("not supported!");
+    }
+
+
+    private void addFirewallRule(IntentMessage intentMessage){
+
+        String access = intentMessage.getParamValue("access");
+        AccessType accessType = AccessType.valueOf(access);
+
+        String all = intentMessage.getParamValue("all");
+        String from = intentMessage.getParamValue("from");
+        String to = intentMessage.getParamValue("to");
+
+        topologyController.addFirewallRule(accessType, from, to);
+
     }
 
     private GraphEntity addPolicy(IntentMessage intentMessage) {
@@ -431,6 +448,7 @@ public class GraphController {
 
         Firewall fw1 = databaseController.createFirewall("FW1");
         entities.add(this.createGraphNode(fw1));
+
         databaseController.createNodeConnection(sw2.getId(), fw1.getId());
         entities.add(this.createGraphEdge(sw2.getId(), fw1.getId()));
 
@@ -445,6 +463,9 @@ public class GraphController {
         mySQL.setHost(db1);
         entities.add(createGraphEdge(mySQL.getId(), db1.getId()));
 
+        fw1.addRule(Integer.MAX_VALUE, AccessType.DENY, "0.0.0.0/0", null, null, null);
+        fw1.addRule(100, AccessType.ALLOW, web1.getIpAddress() + "/32", null, null, null);
+        fw1.addRule(90, AccessType.ALLOW, db1.getIpAddress() + "/32", null, null, null);
 
         return entities;
     }
@@ -462,7 +483,7 @@ public class GraphController {
         }
 
         for (ConnectionMessage connection : topology.getConnectionSet()) {
-            entities.add(createGraphEdge(connection.getSource(),connection.getDestination()));
+            entities.add(createGraphEdge(connection.getSource(), connection.getDestination()));
         }
 
         return entities;

@@ -1,5 +1,6 @@
 package com.huawei.ibc.model.controller;
 
+import com.huawei.ibc.model.common.AccessType;
 import com.huawei.ibc.model.common.TopologyMessage;
 import com.huawei.ibc.model.db.node.*;
 import com.huawei.ibc.model.db.protocol.MACAddress;
@@ -95,5 +96,10 @@ public class TopologyControllerImpl {
         packet.setDestinationIp(ipAddress);
     }
 
+    public void addFirewallRule(AccessType type, String fromNode, String toNode){
+
+
+
+    }
 
 }
