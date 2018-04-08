@@ -52,8 +52,10 @@ public class SimpleHintController implements HintController {
         commandSet.add("delete all");
         commandSet.add("show all");
 
-        commandSet.add("find path");
-        commandSet.add("show path");
+        commandSet.add("find path from");
+        commandSet.add("show path from");
+        commandSet.add("find path to");
+        commandSet.add("show path to");
 
         commandSet.add("allow traffic");
         commandSet.add("allow all traffic");
