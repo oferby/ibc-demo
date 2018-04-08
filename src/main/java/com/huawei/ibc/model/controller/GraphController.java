@@ -4,11 +4,9 @@ import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.message.IntentStatus;
 import com.huawei.ibc.model.client.*;
 import com.huawei.ibc.model.client.Group;
-import com.huawei.ibc.model.common.AccessType;
-import com.huawei.ibc.model.common.ConnectionMessage;
-import com.huawei.ibc.model.common.NodeType;
-import com.huawei.ibc.model.common.TopologyMessage;
+import com.huawei.ibc.model.common.*;
 import com.huawei.ibc.model.db.node.*;
+import com.huawei.ibc.service.PolicyController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
@@ -31,6 +29,9 @@ public class GraphController {
 
     @Autowired
     private TopologyControllerImpl topologyController;
+
+    @Autowired
+    private PolicyController policyController;
 
     public List<GraphEntity> getGraphEntity(IntentMessage intentMessage) {
 
@@ -80,6 +81,11 @@ public class GraphController {
             case "addFirewallRule":
                 this.addFirewallRule(intentMessage);
                 return null;
+            case "addGroup":
+                graphEntityList.add(this.addGroup(intentMessage));
+                return graphEntityList;
+            case "addToGroup":
+                return this.addToGroup(intentMessage);
 
         }
 
@@ -95,6 +101,11 @@ public class GraphController {
         String all = intentMessage.getParamValue("all");
         String from = intentMessage.getParamValue("from");
         String to = intentMessage.getParamValue("to");
+
+        if (!policyController.verifyPolicy(from, to)) {
+            this.sendError("This action violate current policy");
+            return;
+        }
 
         topologyController.addFirewallRule(accessType, from, to);
 
@@ -119,16 +130,24 @@ public class GraphController {
 
         String fromNodeId = intentMessage.getParamValue("from");
         AbstractNode fromNode = databaseController.getNodeById(fromNodeId);
-        if (fromNode == null)
-            throw new RuntimeException("invalid from node id");
+        if (fromNode == null) {
+            fromNode = databaseController.getGroup(fromNodeId);
+            if (fromNode == null)
+                throw new RuntimeException("invalid from node id");
+        }
+
         policy.setFrom(fromNode);
         graphEntityList.add(this.createGraphNode(fromNode));
         graphEntityList.add(this.createGraphEdge(fromNode.getId(), policy.getId()));
 
         String toNodeId = intentMessage.getParamValue("to");
         AbstractNode toNode = databaseController.getNodeById(toNodeId);
-        if (toNode == null)
-            throw new RuntimeException("invalid to node id");
+        if (toNode == null) {
+            toNode = databaseController.getGroup(toNodeId);
+            if (toNode == null)
+                throw new RuntimeException("invalid to node id");
+        }
+
         policy.setTo(toNode);
         graphEntityList.add(this.createGraphNode(toNode));
         graphEntityList.add(this.createGraphEdge(toNode.getId(), policy.getId()));
@@ -476,6 +495,14 @@ public class GraphController {
         fw1.addRule(100, AccessType.ALLOW, web1.getIpAddress() + "/32", null, null, null);
         fw1.addRule(90, AccessType.ALLOW, db1.getIpAddress() + "/32", null, null, null);
 
+        com.huawei.ibc.model.db.node.Group group = databaseController.createGroup("webservers", GroupType.GENERAL);
+        group.addNode(web1);
+
+        Policy policy = databaseController.createPolicy("db-access");
+        policy.setTo(db1);
+        policy.setFrom(group);
+        policy.setAccessType(AccessType.ALLOW);
+
         return entities;
     }
 
@@ -497,5 +524,38 @@ public class GraphController {
 
         return entities;
     }
+
+    private GraphEntity addGroup(IntentMessage intentMessage) {
+
+        String name = intentMessage.getParamValue("name");
+        com.huawei.ibc.model.db.node.Group group = databaseController.createGroup(name, GroupType.GENERAL);
+        return this.createGraphNode(group);
+
+    }
+
+    private List<GraphEntity> addToGroup(IntentMessage intentMessage) {
+
+        com.huawei.ibc.model.db.node.Group group = databaseController.getGroup(intentMessage.getParamValue("group"));
+        if (group == null)
+            throw new RuntimeException("group not found.");
+
+        AbstractNode node = databaseController.getNodeById(intentMessage.getParamValue("node"));
+
+        group.addNode(node);
+
+        List<GraphEntity> entities = new LinkedList<>();
+        entities.add(this.createGraphNode(group));
+        entities.add(this.createGraphNode(node));
+        entities.add(this.createGraphEdge(group.getId(),node.getId()));
+
+        return entities;
+
+    }
+
+    private void sendError(String error) {
+        IntentMessage intentMessage = new IntentMessage(error, IntentStatus.ERROR, null);
+        template.convertAndSend("/topic/hint", intentMessage);
+    }
+
 
 }

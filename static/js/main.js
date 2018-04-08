@@ -76,6 +76,13 @@ function createGraph(){
                        style: {
                          'background-image': 'images/policy.png'
                        }
+                     },
+                     {
+                       selector: '.group',
+                       style: {
+                         'background-image': 'images/group.png',
+                         'shape': 'rectangle'
+                       }
                      }
 
                   ]
@@ -91,6 +98,8 @@ var lastCommand = '';
 
 var stompClient = null;
 
+var hasAlert = false;
+
 function connect() {
     var socket = new SockJS('/intent-websocket');
     stompClient = Stomp.over(socket);
@@ -104,6 +113,8 @@ function connect() {
                 doLocal(res);
             } else if (res.status == 'INFO') {
                 doInfo(res);
+            } else if (res.status == 'ERROR') {
+                showAlert(res.hint);
             } else {
                 inputTextHint(res.hint);
             }
@@ -232,6 +243,7 @@ function getHint(isDone) {
                           'hint': $("#input").val(),
                           'status': 'ENTERED'
                       });
+        $("#input").val('');
     } else {
         msg  = JSON.stringify({
                            'hint': $("#input").val(),
@@ -255,21 +267,42 @@ function inputTextHint(inputText){
 
 
 function showAlert(alertText) {
+    var $warning = $('#warning');
+    $warning.text(alertText);
+    $warning.css('opacity', '1');
+    $warning.css('bottom', '125%');
 
-    $("#warning").text($("#input").val());
-    $('#warning').css('opacity', '1');
-    $('#warning').css('bottom', '125%');
-
+    hasAlert = true;
 }
 
+
+function clearAlert() {
+
+    var $warning = $('#warning');
+    $warning.text("");
+    $warning.css('opacity', '0');
+    $warning.css('bottom', '0%');
+
+    hasAlert = false;
+
+}
 
 $(document).ready(function(){
     connect();
     $("#input").keyup(function(event){
 //        console.log('key pressed: ' + event.which);
+        if (event.which == 38 || event.which == 40) {
+            $("#input").val(lastCommand);
+            return;
+        }
 
         if ($("#input").val().length > 0) {
             $('#hint').css('opacity', '1');
+
+            if (hasAlert) {
+                clearAlert();
+            }
+
         } else {
             $('#hint').css('opacity', '0');
             $('#hint').text('');
@@ -281,11 +314,8 @@ $(document).ready(function(){
             $('#hint').text('') ;
             $('#hint').css('opacity', '0');
             getHint(true);
-            $("#input").val('');
         } else if (event.which == 32) {
             $("#input").val($('#hint').text() + ' ');
-        } if (event.which == 38 || event.which == 40) {
-            $("#input").val(lastCommand);
         } else {
             getHint(false);
         }

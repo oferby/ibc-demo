@@ -34,6 +34,7 @@ public class SimpleHintController implements HintController {
         commandSet.addAll(this.hintString("service"));
         commandSet.addAll(this.hintString("policy"));
         commandSet.addAll(this.hintString("application"));
+        commandSet.addAll(this.hintString("group"));
 
         commandSet.add("show service");
         commandSet.add("display service");
@@ -69,6 +70,7 @@ public class SimpleHintController implements HintController {
         patternMap.put(createEntityPattern("service"), "addService");
         patternMap.put(createEntityPattern("application"), "addApplication");
         patternMap.put(createEntityPattern("policy"), "addPolicy");
+        patternMap.put(createEntityPattern("group"), "addGroup");
 
         patternMap.put(Pattern.compile("(show|display)\\s+(all\\s+)?services\\s*"), "showService");
         patternMap.put(Pattern.compile("(show|display)\\s+(all\\s+)?(policies|policy)\\s*"), "showPolicies");
@@ -85,6 +87,9 @@ public class SimpleHintController implements HintController {
         patternMap.put(Pattern.compile("(show|find)\\s+path.+"), "findPath");
 
         patternMap.put(Pattern.compile("(allow|deny)\\s+(all\\s+)?traffic\\s+(from|to)\\s+([a-z0-9]+).*"), "addFirewallRule");
+
+        patternMap.put(Pattern.compile("(add|new|create)\\s+group\\s+([a-z0-9]+)\\s*"), "addGroup");
+        patternMap.put(Pattern.compile("add\\s+([a-z0-9]+)\\s+to\\s+group\\s+([a-z0-9]+)\\s*"), "addToGroup");
 
     }
 
@@ -211,7 +216,10 @@ public class SimpleHintController implements HintController {
                 return this.findPath(intentMessage);
             case "addFirewallRule":
                 return this.addFirewallRule(intentMessage);
-
+            case "addGroup":
+                return this.addGroup(intentMessage);
+            case "addToGroup":
+                return this.addToGroup(intentMessage);
         }
 
         return intentMessage;
@@ -463,5 +471,37 @@ public class SimpleHintController implements HintController {
         intentMessage.addParam(m.group(5), m.group(6));
         return doneIntent(intentMessage, "findPath");
     }
+
+    private IntentMessage addGroup(IntentMessage intentMessage){
+
+        String command = intentMessage.getHint();
+        Pattern p = Pattern.compile("(add|new|create)\\s+group\\s+([a-z0-9]+)\\s*");
+        Matcher m = p.matcher(command);
+
+        if (!m.find() ) {
+            throw new RuntimeException("could not find parameters in command");
+        }
+
+        intentMessage.addParam("name", m.group(2));
+        return doneIntent(intentMessage, "addGroup");
+
+    }
+
+    private IntentMessage addToGroup(IntentMessage intentMessage){
+
+        String command = intentMessage.getHint();
+        Pattern p = Pattern.compile("add\\s+([a-z0-9]+)\\s+to\\s+group\\s+([a-z0-9]+)\\s*");
+        Matcher m = p.matcher(command);
+
+        if (!m.find() ) {
+            throw new RuntimeException("could not find parameters in command");
+        }
+
+        intentMessage.addParam("node", m.group(1));
+        intentMessage.addParam("group", m.group(2));
+        return doneIntent(intentMessage, "addToGroup");
+
+    }
+
 
 }

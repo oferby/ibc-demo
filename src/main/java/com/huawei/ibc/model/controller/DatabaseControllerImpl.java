@@ -206,10 +206,13 @@ public class DatabaseControllerImpl {
         return devices;
     }
 
-    public void createGroup(String groupId, GroupType groupType) {
+    public Group createGroup(String groupId, GroupType groupType) {
 
         this.validateUniqueName(groupId);
-        groupMap.put(groupId.toLowerCase(), new Group(groupId, groupType));
+        Group group = new Group(groupId, groupType);
+        groupMap.put(groupId.toLowerCase(), group);
+        return group;
+
     }
 
     public Group getGroup(String id) {

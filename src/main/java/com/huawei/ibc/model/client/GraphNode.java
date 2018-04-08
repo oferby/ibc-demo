@@ -43,6 +43,9 @@ public class GraphNode extends GraphEntity{
             case APPLICATION:
                 this.setNodeClass("application");
                 break;
+            case GROUP:
+                this.setNodeClass("group");
+                break;
 
             default:
                 throw new RuntimeException();
