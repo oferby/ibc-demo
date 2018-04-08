@@ -109,6 +109,8 @@ public class SimpleHintController implements HintController {
             return this.validateCompleteIntent(intentMessage);
         } else if (intentMessage.getStatus() == IntentStatus.HINT) {
             return this.buildHint(intentMessage);
+        } else if (intentMessage.getStatus() == IntentStatus.INFO) {
+            return this.handleInfo(intentMessage);
         }
 
         throw new RuntimeException("not supported!");
@@ -182,7 +184,9 @@ public class SimpleHintController implements HintController {
             case "deleteAll":
                 return this.getCreateNodeIntent(intentMessage, "deleteAll");
             case "addVm":
-                return this.getCreateNodeIntent(intentMessage, "addVm");
+                intentMessage.setStatus(IntentStatus.INFO);
+                intentMessage.setIntent("addVm");
+                return this.handleAddVmInfo(intentMessage);
             case "addRouter":
                 return this.getCreateNodeIntent(intentMessage, "addRouter");
             case "addSwitch":
@@ -212,6 +216,59 @@ public class SimpleHintController implements HintController {
 
         return intentMessage;
     }
+
+
+    private IntentMessage handleInfo(IntentMessage intentMessage) {
+
+        String intent = intentMessage.getIntent();
+
+        switch (intent) {
+
+            case "addVm":
+                return this.handleAddVmInfo(intentMessage);
+
+        }
+
+        throw new RuntimeException("not supported!");
+
+    }
+
+    private IntentMessage handleAddVmInfo(IntentMessage intentMessage) {
+
+        if (intentMessage.getParamValue("cpu") == null) {
+
+            intentMessage.addParam("type", "option");
+            intentMessage.addParam("question", "How many CPUs would you like?");
+            intentMessage.addParam("options", "1,2,4,8,16,32");
+            intentMessage.addParam("param","cpu");
+
+            return intentMessage;
+
+        } else if (intentMessage.getParamValue("memory") == null) {
+
+            intentMessage.addParam("type", "option");
+            intentMessage.addParam("question", "How much memory do you need?");
+            intentMessage.addParam("options", "4,8,16,32");
+            intentMessage.addParam("param","memory");
+
+            return intentMessage;
+
+        } else if (intentMessage.getParamValue("gpu") == null) {
+
+            intentMessage.addParam("type", "yesno");
+            intentMessage.addParam("question", "Do you need GPU?");
+            intentMessage.addParam("param", "gpu");
+
+            return intentMessage;
+
+        }
+
+        return this.getCreateNodeIntent(intentMessage, "addVm");
+
+    }
+
+
+
 
     private IntentMessage addFirewallRule(IntentMessage intentMessage) {
 
@@ -411,7 +468,5 @@ public class SimpleHintController implements HintController {
         intentMessage.addParam(m.group(5), m.group(6));
         return doneIntent(intentMessage, "findPath");
     }
-
-
 
 }

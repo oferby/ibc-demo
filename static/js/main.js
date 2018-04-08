@@ -87,6 +87,8 @@ function createGraph(){
 
 var cy = createGraph();
 
+var lastCommand = '';
+
 var stompClient = null;
 
 function connect() {
@@ -100,6 +102,8 @@ function connect() {
                 sendIntent(res);
             } else if (res.status == 'LOCAL') {
                 doLocal(res);
+            } else if (res.status == 'INFO') {
+                doInfo(res);
             } else {
                 inputTextHint(res.hint);
             }
@@ -129,6 +133,78 @@ function doLocal(res) {
         default:
             console.log('unknown local intent');
             break;
+    }
+
+}
+
+function sendinfo(info) {
+    var $info = $('#info');
+    $info.css('opacity', '0');
+    $info.css('bottom', '0%');
+    stompClient.send("/app/getHint", {}, JSON.stringify(info));
+}
+
+
+function doInfo(res) {
+
+    if (res.params['type'] == 'option') {
+
+        var $info = $('#info');
+        $info.text(res.params['question'] + "  ");
+        var $btn = null;
+        var ss = res.params['options'].split(",");
+        for (var i in ss) {
+             var param = ss[i];
+             $btn = $('<button/>', {
+                text: param,
+                id: 'btn_'+i,
+                click: function () {
+                    res.params[res.params['param']] = this.textContent;
+                    sendinfo(res);
+                }
+            });
+
+            $info.append($btn);
+        }
+
+        $info.css('opacity', '1');
+        $info.css('bottom', '125%');
+
+    } else if (res.params['type'] == 'yesno') {
+
+        var $info = $('#info');
+        $info.text(res.params['question'] + "  ");
+
+        var $btn = null;
+
+        $btn = $('<button/>', {
+           text: "yes",
+           id: 'btn_yes',
+           click: function () {
+               res.params[res.params['param']] = "yes";
+               sendinfo(res);
+           }
+        });
+
+        $info.append($btn);
+
+        $btn = $('<button/>', {
+           text: "no",
+           id: 'btn_no',
+           click: function () {
+               res.params[res.params['param']] = "no";
+               sendinfo(res);
+           }
+        });
+
+        $info.append($btn);
+
+        $info.css('opacity', '1');
+        $info.css('bottom', '125%');
+
+    } if (res.params['type'] == 'text') {
+
+
     }
 
 }
@@ -177,24 +253,40 @@ function inputTextHint(inputText){
 
 }
 
+
+function showAlert(alertText) {
+
+    $("#warning").text($("#input").val());
+    $('#warning').css('opacity', '1');
+    $('#warning').css('bottom', '125%');
+
+}
+
+
 $(document).ready(function(){
     connect();
     $("#input").keyup(function(event){
-        console.log('key pressed: ' + event.which);
+//        console.log('key pressed: ' + event.which);
 
         if ($("#input").val().length > 0) {
             $('#hint').css('opacity', '1');
+            $('#warning').css('opacity', '0');
+            $('#warning').css('bottom', '0%');
+
         } else {
             $('#hint').css('opacity', '0');
         }
 
         if (event.which == 13) {
+            lastCommand = $("#input").val();
             $('#hint').text('') ;
             $('#hint').css('opacity', '0');
             getHint(true);
             $("#input").val('');
         } else if (event.which == 32) {
             $("#input").val($('#hint').text() + ' ');
+        } if (event.which == 38 || event.which == 40) {
+            $("#input").val(lastCommand);
         } else {
             getHint(false);
         }
