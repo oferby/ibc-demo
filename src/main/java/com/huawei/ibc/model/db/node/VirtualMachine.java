@@ -32,6 +32,11 @@ public class VirtualMachine extends AbstractDevice implements ForwardingDevice {
 
     }
 
+    @Override
+    public void portUp(ForwardingPort port) {
+
+    }
+
     public void tx(IpPacket packet, EthernetPort port){
 
         if (packet instanceof DhcpRequestPacket) {

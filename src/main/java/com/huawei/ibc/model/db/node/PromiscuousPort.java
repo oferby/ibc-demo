@@ -6,7 +6,7 @@ import com.huawei.ibc.model.db.node.ForwardingPort;
 import com.huawei.ibc.model.db.protocol.EthernetPacket;
 import com.huawei.ibc.model.db.protocol.IpPacket;
 
-public class PromiscuousPort implements ForwardingPort{
+public class PromiscuousPort implements ForwardingPort {
 
     protected ForwardingPort connectedTo;
     protected AbstractDevice device;
@@ -30,11 +30,12 @@ public class PromiscuousPort implements ForwardingPort{
 
     }
 
-
-
     @Override
     public void setConnectedPort(ForwardingPort port) {
         this.connectedTo = port;
+        if (port != null) {
+            this.device.portUp(this);
+        }
     }
 
     @Override

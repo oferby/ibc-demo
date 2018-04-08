@@ -32,6 +32,11 @@ public class Internet extends AbstractDevice {
 
     }
 
+    @Override
+    public void portUp(ForwardingPort port) {
+
+    }
+
     private EthernetPort getOutPort(IpPacket packet) {
 
         String destinationIp = packet.getDestinationIp();

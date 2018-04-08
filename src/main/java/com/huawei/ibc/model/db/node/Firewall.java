@@ -42,6 +42,11 @@ public class Firewall extends AbstractDevice {
 
     }
 
+    @Override
+    public void portUp(ForwardingPort port) {
+
+    }
+
     private boolean isAllowed(IpPacket packet) {
 
         if (packet instanceof DhcpRequestPacket)

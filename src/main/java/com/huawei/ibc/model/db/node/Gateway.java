@@ -20,4 +20,9 @@ public class Gateway extends AbstractDevice {
 
     }
 
+    @Override
+    public void portUp(ForwardingPort port) {
+
+    }
+
 }

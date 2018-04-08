@@ -9,7 +9,7 @@ import java.util.Set;
 public class Subnet extends AbstractNode{
 
     private SubnetUtils utils;
-    private Set<AbstractDevice> attachedDevces = new HashSet<>();
+    private Set<EthernetPort> attachedPorts = new HashSet<>();
 
     public Subnet(String id, String cidr) {
         super(id, NodeType.SUBNET);
@@ -20,8 +20,8 @@ public class Subnet extends AbstractNode{
          utils = new SubnetUtils(cidr);
     }
 
-    public void attachToSubnet(AbstractDevice device) {
-        attachedDevces.add(device);
+    public void attachToSubnet(EthernetPort port) {
+        attachedPorts.add(port);
     }
 
     public String getCIDR() {

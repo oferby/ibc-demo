@@ -344,22 +344,17 @@ public class SimpleHintController implements HintController {
     private IntentMessage createNodeConnectionIntent(IntentMessage intentMessage) {
 
         String command = intentMessage.getHint();
-        String[] strings = command.split(" ");
+        Pattern p = Pattern.compile("connect\\s+([a-z0-9]+)\\s+(to\\s+|with\\s+|and\\s+)?([a-z0-9]+)\\s*");
+        Matcher m = p.matcher(command);
 
-        List<String> list = new ArrayList<String>(Arrays.asList(strings));
-        list.removeAll(Collections.singletonList(""));
-        strings = list.toArray(strings);
-
-        if (strings.length == 3) {
-            intentMessage.addParam("target", strings[2]);
-        } else if (strings.length == 4) {
-            intentMessage.addParam("target", strings[3]);
-        } else {
-            throw new RuntimeException("invalid number of parameters");
+        if (!m.find() ) {
+            throw new RuntimeException("could not find parameters in command");
         }
 
+        intentMessage.addParam("source", m.group(1));
+        intentMessage.addParam("target", m.group(3));
+
         intentMessage.setIntent("connectNodes");
-        intentMessage.addParam("source", strings[1]);
         intentMessage.setStatus(IntentStatus.DONE);
 
         return intentMessage;

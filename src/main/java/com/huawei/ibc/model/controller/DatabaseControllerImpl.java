@@ -114,7 +114,7 @@ public class DatabaseControllerImpl {
         return application;
     }
 
-    public void createNodeConnection(String sourceId, String targetId) {
+    public List<AbstractDevice> createNodeConnection(String sourceId, String targetId) {
 
         AbstractDevice sourceDevice = (AbstractDevice) nodeMap.get(sourceId.toLowerCase());
 
@@ -142,6 +142,11 @@ public class DatabaseControllerImpl {
         } else if (targetDevice instanceof VirtualMachine){
             this.addSubnetToHost((VirtualMachine) targetDevice, (EthernetPort) targetPort);
         }
+
+        List<AbstractDevice> devices = new LinkedList<>();
+        devices.add(sourceDevice);
+        devices.add(targetDevice);
+        return devices;
     }
 
     private void addSubnetToRouter(EthernetPort routerPort){

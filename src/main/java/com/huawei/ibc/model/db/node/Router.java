@@ -62,11 +62,10 @@ public class Router extends AbstractDevice implements ForwardingDevice {
                 packet.setDestinationIp(ipAddress);
                 packet.setSourceIp(port.getIpAddress());
                 packet.setSubnetUtils(new SubnetUtils(ipAddress, port.getNetmask()));
-
+                packet.setAck();
                 return;
             }
         }
-
 
     }
 
@@ -90,6 +89,11 @@ public class Router extends AbstractDevice implements ForwardingDevice {
 
     @Override
     public void tx(IpPacket packet) {
+
+    }
+
+    @Override
+    public void portUp(ForwardingPort port) {
 
     }
 

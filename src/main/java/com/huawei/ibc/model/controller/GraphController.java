@@ -235,9 +235,12 @@ public class GraphController {
 
         String source = intentMessage.getParamValue("source");
         String target = intentMessage.getParamValue("target");
-        databaseController.createNodeConnection(source, target);
+        List<AbstractDevice> devices = databaseController.createNodeConnection(source, target);
 
-        return this.createGraphEdge(source, target);
+        if (devices == null || devices.size() != 2)
+            throw new RuntimeException("invalid number of devices in connection");
+
+        return this.createGraphEdge(devices.get(0), devices.get(1));
     }
 
 
@@ -359,6 +362,12 @@ public class GraphController {
 
         return graphEntity;
 
+    }
+
+
+    private GraphEdge createGraphEdge(AbstractDevice source, AbstractDevice target) {
+
+        return this.createGraphEdge(source.getId(), target.getId());
     }
 
 

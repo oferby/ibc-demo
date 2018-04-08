@@ -270,11 +270,10 @@ $(document).ready(function(){
 
         if ($("#input").val().length > 0) {
             $('#hint').css('opacity', '1');
-            $('#warning').css('opacity', '0');
-            $('#warning').css('bottom', '0%');
-
         } else {
             $('#hint').css('opacity', '0');
+            $('#hint').text('');
+            return;
         }
 
         if (event.which == 13) {

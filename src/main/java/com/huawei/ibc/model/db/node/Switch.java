@@ -34,7 +34,9 @@ public class Switch extends AbstractDevice implements ForwardingDevice {
                 if (port.equals(inPort))
                     continue;
                 port.tx(packet);
-                return;
+                if (packet.isAck()) {
+                    return;
+                }
             }
 
         }
@@ -61,6 +63,11 @@ public class Switch extends AbstractDevice implements ForwardingDevice {
 
     @Override
     public void tx(IpPacket packet) {
+
+    }
+
+    @Override
+    public void portUp(ForwardingPort port) {
 
     }
 
