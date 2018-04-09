@@ -172,7 +172,7 @@ public class SimpleHintController implements HintController {
         }
 
         if (intent == null) {
-            return intentMessage;
+            return handleUnknown(intentMessage);
         }
 
         switch (intent) {
@@ -224,7 +224,7 @@ public class SimpleHintController implements HintController {
                 return this.addToGroup(intentMessage);
         }
 
-        return intentMessage;
+        return handleUnknown(intentMessage);
     }
 
 
@@ -240,6 +240,15 @@ public class SimpleHintController implements HintController {
         }
 
         throw new RuntimeException("not supported!");
+
+    }
+
+
+    private IntentMessage handleUnknown(IntentMessage intentMessage){
+        intentMessage.setStatus(IntentStatus.INFO);
+        intentMessage.addParam("type", "unknownRequest");
+        intentMessage.addParam("question", "Sorry, did not understand your request. Please rephrase.");
+        return intentMessage;
 
     }
 

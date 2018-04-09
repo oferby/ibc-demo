@@ -441,6 +441,7 @@ public class GraphController {
         entities.add(this.createGraphNode(r1));
 
         AbstractNode internet = databaseController.getNodeById("Internet");
+        entities.add(this.createGraphNode(internet));
         databaseController.createNodeConnection(internet.getId(), r1.getId());
         entities.add(this.createGraphEdge(internet.getId(), r1.getId()));
 
