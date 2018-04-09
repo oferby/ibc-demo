@@ -68,7 +68,7 @@ public class SimpleHintController implements HintController {
         patternMap.put(Pattern.compile("(build|create|start|add)\\s+demo\\s+2\\s*"), "buildDemo2");
 
         patternMap.put(Pattern.compile("(add|create|new|start)\\s+vm\\s+([a-z0-9]+)\\s+default\\s*"), "addVmDefault");
-        patternMap.put(createEntityPattern("vm"), "addVm");
+        patternMap.put(Pattern.compile("(add|create|new|start)\\s+vm\\s+([a-z0-9]+)\\s*"), "addVm");
         patternMap.put(createEntityPattern("switch"), "addSwitch");
         patternMap.put(createEntityPattern("router"), "addRouter");
         patternMap.put(createEntityPattern("firewall"), "addFirewall");

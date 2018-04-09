@@ -302,6 +302,17 @@ public class GraphController {
         AbstractNode sNode = databaseController.getNodeById(source);
         AbstractNode tNode = databaseController.getNodeById(target);
 
+        if (sNode instanceof VirtualMachine && ((VirtualMachine) sNode).getPortList().size() != 0) {
+            sendError("VM " + sNode.getId() + " already connected.");
+            return null;
+        }
+
+        if (tNode instanceof VirtualMachine && ((VirtualMachine) tNode).getPortList().size() != 0) {
+            sendError("VM " + tNode.getId() + " already connected.");
+            return null;
+        }
+
+
         List<GraphEntity> entities = new LinkedList<>();
         if (sNode instanceof VirtualMachine && tNode instanceof VirtualMachine) {
 

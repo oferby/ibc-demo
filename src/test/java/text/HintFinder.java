@@ -125,6 +125,7 @@ public class HintFinder {
         commandList.add("add vm v1  ");
         commandList.add("create    vm v1 default ");
         commandList.add("new vm v1 default");
+        commandList.add("add vm  v1 default");
 
         Pattern p = Pattern.compile("(add|create|new|start)\\s+vm\\s+([a-z0-9]+)\\s*(default)?\\s*");
 
