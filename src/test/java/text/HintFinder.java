@@ -55,11 +55,12 @@ public class HintFinder {
     public void extract() {
 
         Map<String, String> params = new HashMap<>();
-        String s = "set policy p1 allow traffic  from  vm1 to  db1";
+//        String s = "set policy p1 allow traffic  from  vm1 to  db1";
+        String s = "policy p1 allow traffic from  web1 to  web2";
 //        String s = "set policy p1 allow traffic to node5 from node4 ";
 //        String s = "set policy p1 allow traffic from node4 to node5 ";
-
-        Pattern p = Pattern.compile("set\\s+policy\\s+([a-z0-9]+)\\s+(allow|deny).*?(from|to)\\s+([a-z0-9]+).*?(from|to)\\s+([a-z0-9]+)");
+        Pattern p = Pattern.compile("(set\\s+)?policy\\s+([a-z0-9]+)\\s+(allow|deny).*(from|to)\\s+([a-z0-9]+).*(from|to)\\s+([a-z0-9]+)\\s*");
+//        Pattern p = Pattern.compile("set\\s+policy\\s+([a-z0-9]+)\\s+(allow|deny).*?(from|to)\\s+([a-z0-9]+).*?(from|to)\\s+([a-z0-9]+)");
         Matcher m = p.matcher(s);
 
         if (!m.find()) {
@@ -88,6 +89,56 @@ public class HintFinder {
         params.put(toFrom2, node2);
 
         System.out.println(params);
+
+    }
+
+    @Test
+    public void showPolicy(){
+
+        List<String> commandList = new LinkedList<>();
+        commandList.add("show policy p1");
+        commandList.add("find policy p1 ");
+        commandList.add("show policy");
+        commandList.add("show all   policies");
+        commandList.add("show  all   policy");
+
+        Pattern p = Pattern.compile("(find|show)\\s+(all\\s+)?(policy|policies)\\s*([a-z0-9]+)?\\s*");
+
+        for (String command : commandList) {
+
+
+            Matcher m = p.matcher(command);
+            boolean found = m.find();
+            assert found;
+
+            if (command.trim().endsWith("p1"))
+                assert m.group(4).equals("p1");
+        }
+
+
+    }
+
+    @Test
+    public void addVm() {
+
+        List<String> commandList = new LinkedList<>();
+        commandList.add("add vm v1  ");
+        commandList.add("create    vm v1 default ");
+        commandList.add("new vm v1 default");
+
+        Pattern p = Pattern.compile("(add|create|new|start)\\s+vm\\s+([a-z0-9]+)\\s*(default)?\\s*");
+
+        for (String command : commandList) {
+
+            Matcher m = p.matcher(command);
+            boolean found = m.find();
+            assert found;
+
+            assert m.group(2).equals("v1");
+
+            assert !command.trim().endsWith("default") || m.group(3).equals("default");
+        }
+
 
     }
 

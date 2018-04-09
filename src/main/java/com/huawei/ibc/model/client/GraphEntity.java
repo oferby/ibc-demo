@@ -33,7 +33,7 @@ public class GraphEntity {
         return data.get("id");
     }
 
-    void addToData(String key, String value) {
+    public void addToData(String key, String value) {
         data.put(key, value);
     }
 

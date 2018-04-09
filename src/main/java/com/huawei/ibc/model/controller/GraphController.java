@@ -16,7 +16,7 @@ import java.util.*;
 @Controller
 public class GraphController {
 
-    private int numId = 0;
+    private int numId = 10;
 
     @Autowired
     private SimpMessagingTemplate template;
@@ -52,7 +52,7 @@ public class GraphController {
                 graphEntityList.add(addSwitch(intentMessage));
                 return graphEntityList;
             case "connectNodes":
-                graphEntityList.add(createNodeConnection(intentMessage));
+                graphEntityList.addAll(createNodeConnection(intentMessage));
                 return graphEntityList;
             case "disconnectNodes":
                 this.disconnectNodes(intentMessage);
@@ -102,7 +102,7 @@ public class GraphController {
         String from = intentMessage.getParamValue("from");
         String to = intentMessage.getParamValue("to");
 
-        if (!policyController.verifyPolicy(from, to)) {
+        if (!policyController.verifyPolicy(from, to, accessType)) {
             this.sendError("This action violate current policy");
             return;
         }
@@ -126,7 +126,7 @@ public class GraphController {
         Policy policy = databaseController.getPolicy(policyName);
         if (policy == null)
             throw new RuntimeException("policy name not found");
-        graphEntityList.add(this.createGraphNode(policy));
+
 
         String fromNodeId = intentMessage.getParamValue("from");
         AbstractNode fromNode = databaseController.getNodeById(fromNodeId);
@@ -167,33 +167,78 @@ public class GraphController {
 
         }
 
+        graphEntityList.add(this.createGraphNode(policy));
+        this.sendClearLocalIntent();
         return graphEntityList;
     }
 
     private Set<GraphEntity> showAllPolicies(IntentMessage intentMessage) {
 
-        this.sendClearLocalIntent(intentMessage);
+        this.sendClearLocalIntent();
+
+        if(intentMessage.getParamValue("name") !=null) {
+
+            Policy policy = databaseController.getPolicy(intentMessage.getParamValue("name"));
+            return this.getPolicy(policy);
+
+        }
 
         Collection<Policy> policies = databaseController.getAllPolicies();
 
         Set<GraphEntity> graphEntities = new HashSet<>();
         for (Policy policy : policies) {
-            graphEntities.add(this.createGraphNode(policy.getId(), NodeType.POLICY));
-            AbstractNode from = policy.getFrom();
-            if (from != null) {
-                graphEntities.add(this.createGraphNode(from.getId(), from.getNodeType()));
-                graphEntities.add(this.createGraphEdge(from.getId(), policy.getId()));
-
-            }
-            AbstractNode to = policy.getTo();
-            if (to != null) {
-                graphEntities.add(this.createGraphNode(to.getId(), to.getNodeType()));
-                graphEntities.add(this.createGraphEdge(to.getId(), policy.getId()));
-            }
+            graphEntities.addAll(this.getPolicy(policy));
         }
 
         return graphEntities;
 
+    }
+
+
+    private Set<GraphEntity> getPolicy(Policy policy) {
+
+        Set<GraphEntity> graphEntities = new HashSet<>();
+
+        GraphNode policyGraphNode = this.createGraphNode(policy);
+        policyGraphNode.addToData("accessType", policy.getAccessType().toString());
+        graphEntities.add(policyGraphNode);
+        AbstractNode from = policy.getFrom();
+        if (from != null) {
+            graphEntities.add(this.createGraphNode(from));
+            graphEntities.add(this.createGraphEdge(from.getId(), policy.getId()));
+
+            if (from instanceof com.huawei.ibc.model.db.node.Group) {
+                for (AbstractNode gNode : ((com.huawei.ibc.model.db.node.Group) from).getNodeSet()) {
+                    graphEntities.add(this.createGraphNode(gNode));
+                    graphEntities.add(this.createGraphEdge(gNode,from));
+                }
+            }
+        }
+
+        AbstractNode to = policy.getTo();
+        if (to != null) {
+            graphEntities.add(this.createGraphNode(to));
+            graphEntities.add(this.createGraphEdge(to.getId(), policy.getId()));
+
+            if (to instanceof com.huawei.ibc.model.db.node.Group) {
+                for (AbstractNode toNode : ((com.huawei.ibc.model.db.node.Group) to).getNodeSet()) {
+                    graphEntities.add(this.createGraphNode(toNode));
+                    graphEntities.add(this.createGraphEdge(toNode,to));
+                }
+            }
+        }
+
+        return graphEntities;
+    }
+
+
+    private void sendDeleteNode(String nodeId) {
+
+        IntentMessage intentMessage = new IntentMessage();
+        intentMessage.setStatus(IntentStatus.LOCAL);
+        intentMessage.setIntent("deleteNode");
+        intentMessage.addParam("id", nodeId);
+        template.convertAndSend("/topic/hint", intentMessage);
     }
 
     private void disconnectNodes(IntentMessage intentMessage) {
@@ -213,12 +258,11 @@ public class GraphController {
 
         databaseController.deleteAll();
         addressController.clearAll();
-        this.sendClearLocalIntent(intentMessage);
-
+        this.sendClearLocalIntent();
     }
 
-    private void sendClearLocalIntent(IntentMessage intentMessage) {
-
+    private void sendClearLocalIntent() {
+        IntentMessage intentMessage = new IntentMessage();
         intentMessage.setStatus(IntentStatus.LOCAL);
         intentMessage.setIntent("clear");
         template.convertAndSend("/topic/hint", intentMessage);
@@ -227,7 +271,7 @@ public class GraphController {
 
     private List<GraphEntity> showAll(IntentMessage intentMessage, List<GraphEntity> graphEntityList) {
 
-        this.sendClearLocalIntent(intentMessage);
+        this.sendClearLocalIntent();
 
         Collection<AbstractDevice> devices = databaseController.getAllDevices();
         Set<GraphEdge> graphEdgeSet = new HashSet<>();
@@ -250,16 +294,39 @@ public class GraphController {
     }
 
 
-    private GraphEdge createNodeConnection(IntentMessage intentMessage) {
+    private List<GraphEntity> createNodeConnection(IntentMessage intentMessage) {
 
         String source = intentMessage.getParamValue("source");
         String target = intentMessage.getParamValue("target");
-        List<AbstractDevice> devices = databaseController.createNodeConnection(source, target);
 
-        if (devices == null || devices.size() != 2)
-            throw new RuntimeException("invalid number of devices in connection");
+        AbstractNode sNode = databaseController.getNodeById(source);
+        AbstractNode tNode = databaseController.getNodeById(target);
 
-        return this.createGraphEdge(devices.get(0), devices.get(1));
+        List<GraphEntity> entities = new LinkedList<>();
+        if (sNode instanceof VirtualMachine && tNode instanceof VirtualMachine) {
+
+            Router router = databaseController.createRouter("r" + (++numId));
+            entities.add(this.createGraphNode(router));
+
+            Switch aSwitch = databaseController.createSwitch("sw" + (++numId));
+            entities.add(this.createGraphNode(aSwitch));
+
+            databaseController.createNodeConnection(router.getId(),aSwitch.getId());
+            entities.add(this.createGraphEdge(router.getId(),aSwitch.getId()));
+
+            databaseController.createNodeConnection(sNode.getId(),aSwitch.getId());
+            entities.add(this.createGraphEdge(sNode.getId(),aSwitch.getId()));
+            databaseController.createNodeConnection(tNode.getId(),aSwitch.getId());
+            entities.add(this.createGraphEdge(tNode.getId(),aSwitch.getId()));
+
+        } else {
+
+            List<AbstractDevice> devices = databaseController.createNodeConnection(source, target);
+            GraphEdge graphEdge = this.createGraphEdge(devices.get(0), devices.get(1));
+            entities.add(graphEdge);
+        }
+
+        return entities;
     }
 
 
@@ -302,7 +369,7 @@ public class GraphController {
 
     private List<GraphEntity> buildDemo(IntentMessage intentMessage) {
 
-        this.sendClearLocalIntent(intentMessage);
+        this.sendClearLocalIntent();
 
         List<GraphEntity> graphEntityList = new ArrayList<>();
         List<Router> routerList = new ArrayList<>();
@@ -368,7 +435,20 @@ public class GraphController {
 
     private GraphNode createGraphNode(AbstractNode node) {
 
-        return this.createGraphNode(node.getId(), node.getNodeType());
+        NodeType nodeType;
+        if (node instanceof Policy){
+            AccessType accessType = ((Policy) node).getAccessType();
+
+            if (accessType == null)
+                nodeType = NodeType.POLICY;
+            else if (accessType == AccessType.ALLOW)
+                nodeType = NodeType.POLICY_ALLOW;
+            else
+                nodeType = NodeType.POLICY_DENY;
+        } else
+            nodeType = node.getNodeType();
+
+        return this.createGraphNode(node.getId(), nodeType);
 
     }
 
@@ -384,7 +464,7 @@ public class GraphController {
     }
 
 
-    private GraphEdge createGraphEdge(AbstractDevice source, AbstractDevice target) {
+    private GraphEdge createGraphEdge(AbstractNode source, AbstractNode target) {
 
         return this.createGraphEdge(source.getId(), target.getId());
     }
@@ -405,7 +485,7 @@ public class GraphController {
         edge.setTraget(targetId);
 
         String edgeId = sourceId + "-" + targetId;
-        edge.setId(edgeId);
+        edge.setId(edgeId.toLowerCase());
 
         return edge;
     }
@@ -433,7 +513,7 @@ public class GraphController {
 
     private List<GraphEntity> buildDemo2(IntentMessage intentMessage) {
 
-        this.sendClearLocalIntent(intentMessage);
+        this.sendClearLocalIntent();
 
         List<GraphEntity> entities = new ArrayList<>();
 
@@ -509,7 +589,7 @@ public class GraphController {
 
     private List<GraphEntity> findPath(IntentMessage intentMessage) {
 
-        sendClearLocalIntent(intentMessage);
+        sendClearLocalIntent();
 
         List<GraphEntity> entities = new ArrayList<>();
 

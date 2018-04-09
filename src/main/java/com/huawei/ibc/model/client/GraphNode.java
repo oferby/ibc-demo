@@ -37,6 +37,12 @@ public class GraphNode extends GraphEntity{
             case POLICY:
                 this.setNodeClass("policy");
                 break;
+            case POLICY_ALLOW:
+                this.setNodeClass("policyAllow");
+                break;
+            case POLICY_DENY:
+                this.setNodeClass("policyDeny");
+                break;
             case SERVICE:
                 this.setNodeClass("service");
                 break;

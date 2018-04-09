@@ -27,7 +27,6 @@ public class SimpleHintController implements HintController {
         commandSet.add("start demo 2");
 
         commandSet.addAll(this.hintString("vm"));
-        commandSet.addAll(this.hintString("virtual machine"));
         commandSet.addAll(this.hintString("switch"));
         commandSet.addAll(this.hintString("router"));
         commandSet.addAll(this.hintString("firewall"));
@@ -41,6 +40,7 @@ public class SimpleHintController implements HintController {
         commandSet.add("show all services");
 
         commandSet.add("set policy");
+        commandSet.add("policy");
         commandSet.add("show policy");
         commandSet.add("show all policies");
         commandSet.add("display policy");
@@ -58,13 +58,16 @@ public class SimpleHintController implements HintController {
         commandSet.add("show path to");
 
         commandSet.add("allow traffic");
+        commandSet.add("allow traffic from");
         commandSet.add("allow all traffic");
         commandSet.add("deny traffic");
+        commandSet.add("deny traffic from");
         commandSet.add("deny all traffic");
 
         patternMap.put(Pattern.compile("(build|create|start|add)\\s+demo\\s+1\\s*"), "buildDemo1");
         patternMap.put(Pattern.compile("(build|create|start|add)\\s+demo\\s+2\\s*"), "buildDemo2");
 
+        patternMap.put(Pattern.compile("(add|create|new|start)\\s+vm\\s+([a-z0-9]+)\\s+default\\s*"), "addVmDefault");
         patternMap.put(createEntityPattern("vm"), "addVm");
         patternMap.put(createEntityPattern("switch"), "addSwitch");
         patternMap.put(createEntityPattern("router"), "addRouter");
@@ -78,7 +81,7 @@ public class SimpleHintController implements HintController {
         patternMap.put(Pattern.compile("(show|display)\\s+(all\\s+)?(policies|policy)\\s*"), "showPolicies");
         patternMap.put(Pattern.compile("show\\s+all\\s*"), "showAll");
 
-        patternMap.put(Pattern.compile("set\\s+policy.+"), "setPolicy");
+        patternMap.put(Pattern.compile("(set\\s+)?policy.+"), "setPolicy");
 
         patternMap.put(Pattern.compile("clear\\s*"), "clear");
         patternMap.put(Pattern.compile("delete\\s+all\\s*"), "deleteAll");
@@ -95,7 +98,7 @@ public class SimpleHintController implements HintController {
 
     }
 
-    private Set<String> hintString(String entity){
+    private Set<String> hintString(String entity) {
 
         Set<String> entityCommands = new TreeSet<>();
         entityCommands.add("add " + entity);
@@ -105,7 +108,7 @@ public class SimpleHintController implements HintController {
         return entityCommands;
     }
 
-    private Pattern createEntityPattern(String entity){
+    private Pattern createEntityPattern(String entity) {
         return Pattern.compile("(add|create|new|start)\\s+" + entity + ".+");
     }
 
@@ -177,13 +180,13 @@ public class SimpleHintController implements HintController {
 
         switch (intent) {
             case "buildDemo1":
-            return this.doneIntent(intentMessage, "buildDemo1");
+                return this.doneIntent(intentMessage, "buildDemo1");
             case "buildDemo2":
                 return this.doneIntent(intentMessage, "buildDemo2");
             case "clear":
                 intentMessage.setStatus(IntentStatus.LOCAL);
                 intentMessage.setIntent("clear");
-                break;
+                return intentMessage;
             case "connect":
                 return this.createNodeConnectionIntent(intentMessage);
             case "disconnect":
@@ -194,6 +197,8 @@ public class SimpleHintController implements HintController {
                 intentMessage.setStatus(IntentStatus.INFO);
                 intentMessage.setIntent("addVm");
                 return this.handleAddVmInfo(intentMessage);
+            case "addVmDefault":
+                return this.getCreateNodeIntent(intentMessage, "addVm");
             case "addRouter":
                 return this.getCreateNodeIntent(intentMessage, "addRouter");
             case "addSwitch":
@@ -207,7 +212,7 @@ public class SimpleHintController implements HintController {
             case "showAll":
                 return this.doneIntent(intentMessage, "showAll");
             case "showPolicies":
-                return this.doneIntent(intentMessage, "showPolicies");
+                return this.showPolicy(intentMessage);
             case "showService":
                 return this.doneIntent(intentMessage, "showService");
             case "setPolicy":
@@ -244,7 +249,7 @@ public class SimpleHintController implements HintController {
     }
 
 
-    private IntentMessage handleUnknown(IntentMessage intentMessage){
+    private IntentMessage handleUnknown(IntentMessage intentMessage) {
         intentMessage.setStatus(IntentStatus.INFO);
         intentMessage.addParam("type", "unknownRequest");
         intentMessage.addParam("question", "Sorry, did not understand your request. Please rephrase.");
@@ -259,7 +264,7 @@ public class SimpleHintController implements HintController {
             intentMessage.addParam("type", "option");
             intentMessage.addParam("question", "How many CPUs would you like?");
             intentMessage.addParam("options", "1,2,4,8,16,32");
-            intentMessage.addParam("param","cpu");
+            intentMessage.addParam("param", "cpu");
 
             return intentMessage;
 
@@ -268,7 +273,7 @@ public class SimpleHintController implements HintController {
             intentMessage.addParam("type", "option");
             intentMessage.addParam("question", "How much memory do you need?");
             intentMessage.addParam("options", "4,8,16,32");
-            intentMessage.addParam("param","memory");
+            intentMessage.addParam("param", "memory");
 
             return intentMessage;
 
@@ -287,8 +292,6 @@ public class SimpleHintController implements HintController {
     }
 
 
-
-
     private IntentMessage addFirewallRule(IntentMessage intentMessage) {
 
         String command = intentMessage.getHint();
@@ -302,7 +305,7 @@ public class SimpleHintController implements HintController {
 
             intentMessage.addParam("access", m.group(1));
 
-            if (m.group(2)!=null)
+            if (m.group(2) != null)
                 intentMessage.addParam("all", "true");
 
             intentMessage.addParam(m.group(3), m.group(4));
@@ -318,7 +321,7 @@ public class SimpleHintController implements HintController {
             if (found) {
                 intentMessage.addParam("access", m.group(1));
 
-                if (m.group(2)!=null)
+                if (m.group(2) != null)
                     intentMessage.addParam("all", "true");
 
                 intentMessage.addParam(m.group(3), m.group(4));
@@ -337,22 +340,19 @@ public class SimpleHintController implements HintController {
     private IntentMessage removeNodeConnectionIntent(IntentMessage intentMessage) {
 
         String command = intentMessage.getHint();
-        String[] strings = command.split(" ");
+        Pattern p = Pattern.compile("disconnect\\s+([a-z0-9]+)\\s+(from\\s+|and\\s+)?([a-z0-9]+)?\\s*");
+        Matcher m = p.matcher(command);
 
-        List<String> list = new ArrayList<String>(Arrays.asList(strings));
-        list.removeAll(Collections.singletonList(""));
-        strings = list.toArray(strings);
-
-        if (strings.length == 3) {
-            intentMessage.addParam("target", strings[2]);
-        } else if (strings.length == 4) {
-            intentMessage.addParam("target", strings[3]);
-        } else {
-            throw new RuntimeException("invalid number of parameters");
+        if (!m.find()) {
+            throw new RuntimeException("could not find parameters in command");
         }
 
+
+        if (m.group(3) != null)
+            intentMessage.addParam("target", m.group(3));
+
         intentMessage.setIntent("disconnectNodes");
-        intentMessage.addParam("source", strings[1]);
+        intentMessage.addParam("source", m.group(1));
         intentMessage.setStatus(IntentStatus.DONE);
 
         return intentMessage;
@@ -362,11 +362,10 @@ public class SimpleHintController implements HintController {
 
     private IntentMessage createNodeConnectionIntent(IntentMessage intentMessage) {
 
-        String command = intentMessage.getHint();
         Pattern p = Pattern.compile("connect\\s+([a-z0-9]+)\\s+(to\\s+|with\\s+|and\\s+)?([a-z0-9]+)\\s*");
-        Matcher m = p.matcher(command);
+        Matcher m = p.matcher(intentMessage.getHint());
 
-        if (!m.find() ) {
+        if (!m.find()) {
             throw new RuntimeException("could not find parameters in command");
         }
 
@@ -392,34 +391,42 @@ public class SimpleHintController implements HintController {
         return doneIntent(intentMessage, intent);
     }
 
-    private IntentMessage getSetPolicyIntent(IntentMessage intentMessage){
+
+    private IntentMessage showPolicy(IntentMessage intentMessage) {
+
+        Pattern p = Pattern.compile("(find|show)\\s+(all\\s+)?(policy|policies)\\s*([a-z0-9]+)?\\s*");
+        Matcher m = p.matcher(intentMessage.getHint());
+
+        if (m.group(4) != null)
+            intentMessage.addParam("name", m.group(4));
+
+        return doneIntent(intentMessage, "showPolicies");
+
+    }
+
+    private IntentMessage getSetPolicyIntent(IntentMessage intentMessage) {
 
         String command = intentMessage.getHint();
-        Pattern p = Pattern.compile("set\\s+policy\\s+([a-z0-9]+)\\s+(allow|deny).*?(from|to)\\s+([a-z0-9]+).*?(from|to)\\s+([a-z0-9]+)");
+        Pattern p = Pattern.compile("(set\\s+)?policy\\s+([a-z0-9]+)\\s+(allow|deny).*(from|to)\\s+([a-z0-9]+).*(from|to)\\s+([a-z0-9]+)\\s*");
         Matcher m = p.matcher(command);
 
-        if (!m.find() ) {
+        if (!m.find()) {
             throw new RuntimeException("could not find parameters in command");
         }
 
-        int groupCount = m.groupCount();
-
-        if (groupCount < 6)
-            throw new RuntimeException("invalid number of parameters");
-
-        String policyName = m.group(1);
+        String policyName = m.group(2);
         intentMessage.addParam("name", policyName);
 
-        String grant1 = m.group(2);
+        String grant1 = m.group(3);
         intentMessage.addParam("operation", grant1);
 
-        String toFrom = m.group(3);
-        String node1 = m.group(4);
+        String toFrom = m.group(4);
+        String node1 = m.group(5);
         intentMessage.addParam(toFrom, node1);
 
 
-        String toFrom2 = m.group(5);
-        String node2 = m.group(6);
+        String toFrom2 = m.group(6);
+        String node2 = m.group(7);
         intentMessage.addParam(toFrom2, node2);
 
         intentMessage.setIntent("setPolicy");
@@ -427,7 +434,7 @@ public class SimpleHintController implements HintController {
         return intentMessage;
     }
 
-    private IntentMessage createApplication(IntentMessage intentMessage){
+    private IntentMessage createApplication(IntentMessage intentMessage) {
 
         Pattern p = Pattern.compile("(add|create)\\s+application\\s+([a-z0-9]+).*port\\s+([0-9]+)");
         Matcher m = p.matcher(intentMessage.getHint());
@@ -471,7 +478,7 @@ public class SimpleHintController implements HintController {
         return intentMessage;
     }
 
-    private IntentMessage findPath(IntentMessage intentMessage){
+    private IntentMessage findPath(IntentMessage intentMessage) {
 
         Pattern p = Pattern.compile("(find|show)\\s+(path|traffic)\\s+(from|to)\\s+([a-z0-9]+)\\s+(from|to)\\s+([a-z0-9]+)\\s*");
         Matcher m = p.matcher(intentMessage.getHint());
@@ -483,13 +490,13 @@ public class SimpleHintController implements HintController {
         return doneIntent(intentMessage, "findPath");
     }
 
-    private IntentMessage addGroup(IntentMessage intentMessage){
+    private IntentMessage addGroup(IntentMessage intentMessage) {
 
         String command = intentMessage.getHint();
         Pattern p = Pattern.compile("(add|new|create)\\s+group\\s+([a-z0-9]+)\\s*");
         Matcher m = p.matcher(command);
 
-        if (!m.find() ) {
+        if (!m.find()) {
             throw new RuntimeException("could not find parameters in command");
         }
 
@@ -498,13 +505,13 @@ public class SimpleHintController implements HintController {
 
     }
 
-    private IntentMessage addToGroup(IntentMessage intentMessage){
+    private IntentMessage addToGroup(IntentMessage intentMessage) {
 
         String command = intentMessage.getHint();
         Pattern p = Pattern.compile("add\\s+([a-z0-9]+)\\s+to\\s+group\\s+([a-z0-9]+)\\s*");
         Matcher m = p.matcher(command);
 
-        if (!m.find() ) {
+        if (!m.find()) {
             throw new RuntimeException("could not find parameters in command");
         }
 
@@ -513,6 +520,5 @@ public class SimpleHintController implements HintController {
         return doneIntent(intentMessage, "addToGroup");
 
     }
-
 
 }

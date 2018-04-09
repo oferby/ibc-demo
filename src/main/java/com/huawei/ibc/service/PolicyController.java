@@ -14,7 +14,7 @@ public class PolicyController {
     @Autowired
     private DatabaseControllerImpl databaseController;
 
-    public boolean verifyPolicy(String sourceId, String targetId) {
+    public boolean verifyPolicy(String sourceId, String targetId, AccessType requestedAccess) {
 
         AbstractNode fromNode = null;
         AbstractNode toNode = null;
@@ -74,13 +74,24 @@ public class PolicyController {
 
         }
 
-        if (type == null || (type == AccessType.ALLOW && fromNode != null))
-            return true;
 
-//        if (type == AccessType.DENY )
-        return false;
+        return type == null ||
+                (!foundBoth(fromNode, toNode, sourceId, targetId) ||
+                        type.equals(requestedAccess)) && (foundBoth(fromNode, toNode, sourceId, targetId) &&
+                        type.equals(requestedAccess) || (fromNode != null || !toNode.getId().toLowerCase().equals(targetId) ||
+                        !type.equals(AccessType.ALLOW) || !requestedAccess.equals(AccessType.ALLOW)) &&
+                        (fromNode == null && toNode.getId().toLowerCase().equals(targetId) && type.equals(AccessType.ALLOW) &&
+                                requestedAccess.equals(AccessType.DENY) || fromNode == null && toNode.getId().toLowerCase().equals(targetId) &&
+                                type.equals(AccessType.DENY) && requestedAccess.equals(AccessType.DENY)));
+
 
     }
 
+    private boolean foundBoth(AbstractNode fromNode, AbstractNode toNode, String sourceId, String targetId) {
+
+        return fromNode != null && toNode != null &&
+                fromNode.getId().toLowerCase().equals(sourceId) && toNode.getId().toLowerCase().equals(targetId);
+
+    }
 
 }
