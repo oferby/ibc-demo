@@ -1,6 +1,7 @@
 package com.huawei.ibc.model.db.node;
 
 import com.huawei.ibc.model.common.NodeType;
+import com.huawei.ibc.model.db.protocol.DhcpRequestPacket;
 import com.huawei.ibc.model.db.protocol.IpPacket;
 import com.huawei.ibc.model.db.protocol.PathDiscoveryPacket;
 
@@ -34,6 +35,13 @@ public class Internet extends AbstractDevice {
 
     @Override
     public void portUp(ForwardingPort port) {
+
+        DhcpRequestPacket packet = new DhcpRequestPacket();
+        port.tx(packet);
+        ((EthernetPort)port).setIpAddress(packet.getSubnetUtils());
+        ((EthernetPort)port).routerIp = packet.getSourceIp();
+        this.arpTable.put(((EthernetPort)port).routerIp, packet.getSourceMac());
+
 
     }
 

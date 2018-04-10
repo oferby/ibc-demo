@@ -127,21 +127,14 @@ public class DatabaseControllerImpl {
         ForwardingPort sourcePort = sourceDevice.addPort(addressController.getMacAddress());
         ForwardingPort targetPort = targetDevice.addPort(addressController.getMacAddress());
 
-        sourcePort.setConnectedPort(targetPort);
-        targetPort.setConnectedPort(sourcePort);
-
         if (sourceDevice instanceof Router) {
             addSubnetToRouter((EthernetPort) sourcePort);
         } else if (targetDevice instanceof Router) {
             addSubnetToRouter((EthernetPort) targetPort);
         }
 
-        if (sourceDevice instanceof VirtualMachine) {
-            this.addSubnetToHost((VirtualMachine) sourceDevice, (EthernetPort) sourcePort);
-
-        } else if (targetDevice instanceof VirtualMachine){
-            this.addSubnetToHost((VirtualMachine) targetDevice, (EthernetPort) targetPort);
-        }
+        sourcePort.setConnectedPort(targetPort);
+        targetPort.setConnectedPort(sourcePort);
 
         List<AbstractDevice> devices = new LinkedList<>();
         devices.add(sourceDevice);
@@ -161,16 +154,6 @@ public class DatabaseControllerImpl {
         routerPort.setIpAddress(routerSubnet);
 
     }
-
-    private void addSubnetToHost(VirtualMachine host, EthernetPort hostPort){
-
-//        taskExecutor.execute(() -> {
-            DhcpRequestPacket packet = new DhcpRequestPacket();
-            host.tx(packet, hostPort);
-//        });
-
-    }
-
 
 
     public void deleteNodeConnection(String sourceId, String targetId) {

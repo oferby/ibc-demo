@@ -50,25 +50,25 @@ public class TopologyControllerImpl {
         PathDiscoveryPacket packet = new PathDiscoveryPacket();
 
         EthernetPort startingPort = null;
-        VirtualMachine sourceVm = null;
+        AbstractDevice sourceDevice = null;
 
-        if (sNode instanceof VirtualMachine) {
+        if (sNode instanceof VirtualMachine || sNode instanceof Internet) {
 
-            this.addSourceAddresses((VirtualMachine) sNode, packet);
-            sourceVm = (VirtualMachine) sNode;
-            startingPort = this.addSourceAddresses(sourceVm, packet);
+            this.addSourceAddresses((AbstractDevice) sNode, packet);
+            sourceDevice = (AbstractDevice) sNode;
+            startingPort = this.addSourceAddresses(sourceDevice, packet);
 
         } else if (sNode instanceof Application) {
 
             Application app = (Application) sNode;
-            sourceVm = app.getHost();
-            startingPort = this.addSourceAddresses(sourceVm, packet);
+            sourceDevice = app.getHost();
+            startingPort = this.addSourceAddresses(sourceDevice, packet);
 
         }
 
-        if (dNode instanceof VirtualMachine) {
-            VirtualMachine vm = (VirtualMachine) dNode;
-            this.addDestinationAddresses(vm, packet);
+        if (dNode instanceof VirtualMachine || dNode instanceof Internet) {
+            AbstractDevice device = (AbstractDevice) dNode;
+            this.addDestinationAddresses(device, packet);
 
         } else if (dNode instanceof Application) {
             Application app = (Application) dNode;
@@ -77,14 +77,14 @@ public class TopologyControllerImpl {
 
         assert packet.getDestinationIp() != null && packet.getDestinationIp() != null && startingPort != null;
 
-        sourceVm.tx(packet);
+        sourceDevice.tx(packet);
 
         return packet;
 
     }
 
-    private EthernetPort addSourceAddresses(VirtualMachine vm, PathDiscoveryPacket packet) {
-        EthernetPort port = (EthernetPort) vm.getPortList().get(0);
+    private EthernetPort addSourceAddresses(AbstractDevice device, PathDiscoveryPacket packet) {
+        EthernetPort port = (EthernetPort) device.getPortList().get(0);
         MACAddress macAddress = port.getMacAddress();
         String ipAddress = port.getSubnetUtils().getInfo().getAddress();
 
@@ -94,9 +94,9 @@ public class TopologyControllerImpl {
         return port;
     }
 
-    private void addDestinationAddresses(VirtualMachine vm, PathDiscoveryPacket packet) {
+    private void addDestinationAddresses(AbstractDevice device, PathDiscoveryPacket packet) {
 
-        EthernetPort port = (EthernetPort) vm.getPortList().get(0);
+        EthernetPort port = (EthernetPort) device.getPortList().get(0);
         MACAddress macAddress = port.getMacAddress();
         String ipAddress = port.getSubnetUtils().getInfo().getAddress();
 

@@ -6,7 +6,7 @@ import com.huawei.ibc.model.db.protocol.IpPacket;
 import com.huawei.ibc.model.db.protocol.MACAddress;
 import com.huawei.ibc.model.db.protocol.PathDiscoveryPacket;
 
-public class VirtualMachine extends AbstractDevice implements ForwardingDevice {
+public class VirtualMachine extends AbstractDevice {
 
     public VirtualMachine(String id) {
         super(id, NodeType.COMPUTE_NODE);
@@ -35,17 +35,15 @@ public class VirtualMachine extends AbstractDevice implements ForwardingDevice {
     @Override
     public void portUp(ForwardingPort port) {
 
+        DhcpRequestPacket packet = new DhcpRequestPacket();
+        port.tx(packet);
+        ((EthernetPort)port).setIpAddress(packet.getSubnetUtils());
+        ((EthernetPort)port).routerIp = packet.getSourceIp();
+        this.arpTable.put(((EthernetPort)port).routerIp, packet.getSourceMac());
+
     }
 
     public void tx(IpPacket packet, EthernetPort port){
-
-        if (packet instanceof DhcpRequestPacket) {
-            port.tx(packet);
-            DhcpRequestPacket dhcpRequestPacket = (DhcpRequestPacket) packet;
-            port.setIpAddress(dhcpRequestPacket.getSubnetUtils());
-            port.routerIp = packet.getSourceIp();
-            this.arpTable.put(port.routerIp, packet.getSourceMac());
-        }
 
     }
 
