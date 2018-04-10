@@ -38,19 +38,19 @@ public class PolicyTests {
         intentMessage.setIntent("buildDemo2");
         List<GraphEntity> graphEntity = graphController.getGraphEntity(intentMessage);
 
-        boolean verifyPolicy = policyController.verifyPolicy("web1", "db1", AccessType.DENY);
+        boolean verifyPolicy = policyController.verifyPolicy("web1", "db1", AccessType.DENY).isOk();
 
         assert !verifyPolicy;
 
-        verifyPolicy = policyController.verifyPolicy("web1", "db1", AccessType.ALLOW);
+        verifyPolicy = policyController.verifyPolicy("web1", "db1", AccessType.ALLOW).isOk();
 
         assert verifyPolicy;
 
-        verifyPolicy = policyController.verifyPolicy("web2", "db1", AccessType.ALLOW);
+        verifyPolicy = policyController.verifyPolicy("web2", "db1", AccessType.ALLOW).isOk();
 
         assert !verifyPolicy;
 
-        verifyPolicy = policyController.verifyPolicy("web2", "db1", AccessType.DENY);
+        verifyPolicy = policyController.verifyPolicy("web2", "db1", AccessType.DENY).isOk();
 
         assert verifyPolicy;
 

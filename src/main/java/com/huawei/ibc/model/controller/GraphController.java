@@ -2,6 +2,7 @@ package com.huawei.ibc.model.controller;
 
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.message.IntentStatus;
+import com.huawei.ibc.message.PolicyVerification;
 import com.huawei.ibc.model.client.*;
 import com.huawei.ibc.model.client.Group;
 import com.huawei.ibc.model.common.*;
@@ -102,8 +103,9 @@ public class GraphController {
         String from = intentMessage.getParamValue("from");
         String to = intentMessage.getParamValue("to");
 
-        if (!policyController.verifyPolicy(from, to, accessType)) {
-            this.sendError("This action violate current policy");
+        PolicyVerification verification = policyController.verifyPolicy(from, to, accessType);
+        if (!verification.isOk()) {
+            this.sendError("This action violate policy: " + verification.getName());
             return;
         }
 

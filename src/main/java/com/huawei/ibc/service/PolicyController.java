@@ -1,5 +1,6 @@
 package com.huawei.ibc.service;
 
+import com.huawei.ibc.message.PolicyVerification;
 import com.huawei.ibc.model.common.AccessType;
 import com.huawei.ibc.model.controller.DatabaseControllerImpl;
 import com.huawei.ibc.model.db.node.AbstractNode;
@@ -14,14 +15,15 @@ public class PolicyController {
     @Autowired
     private DatabaseControllerImpl databaseController;
 
-    public boolean verifyPolicy(String sourceId, String targetId, AccessType requestedAccess) {
+    public PolicyVerification verifyPolicy(String sourceId, String targetId, AccessType requestedAccess) {
 
         AbstractNode fromNode = null;
         AbstractNode toNode = null;
         AccessType type = null;
         AbstractNode node = null;
+        String policyName = null;
         for (Policy policy : databaseController.getAllPolicies()) {
-
+            policyName = policy.getId();
             node = policy.getTo();
 
             if (node instanceof Group) {
@@ -75,7 +77,7 @@ public class PolicyController {
         }
 
 
-        return type == null ||
+        boolean ok = type == null ||
                 (!foundBoth(fromNode, toNode, sourceId, targetId) ||
                         type.equals(requestedAccess)) && (foundBoth(fromNode, toNode, sourceId, targetId) &&
                         type.equals(requestedAccess) || (fromNode != null || !toNode.getId().toLowerCase().equals(targetId) ||
@@ -85,6 +87,7 @@ public class PolicyController {
                                 type.equals(AccessType.DENY) && requestedAccess.equals(AccessType.DENY)));
 
 
+        return new PolicyVerification(policyName, ok);
     }
 
     private boolean foundBoth(AbstractNode fromNode, AbstractNode toNode, String sourceId, String targetId) {
