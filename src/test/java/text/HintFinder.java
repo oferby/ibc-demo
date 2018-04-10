@@ -56,9 +56,10 @@ public class HintFinder {
 
         Map<String, String> params = new HashMap<>();
 //        String s = "set policy p1 allow traffic  from  vm1 to  db1";
-        String s = "policy p1 allow traffic from  web1 to  web2";
+//        String s = "policy p1 allow traffic from  web1 to  web2";
 //        String s = "set policy p1 allow traffic to node5 from node4 ";
 //        String s = "set policy p1 allow traffic from node4 to node5 ";
+        String s = "show policy ";
         Pattern p = Pattern.compile("(set\\s+)?policy\\s+([a-z0-9]+)\\s+(allow|deny).*(from|to)\\s+([a-z0-9]+).*(from|to)\\s+([a-z0-9]+)\\s*");
 //        Pattern p = Pattern.compile("set\\s+policy\\s+([a-z0-9]+)\\s+(allow|deny).*?(from|to)\\s+([a-z0-9]+).*?(from|to)\\s+([a-z0-9]+)");
         Matcher m = p.matcher(s);
@@ -99,6 +100,7 @@ public class HintFinder {
         commandList.add("show policy p1");
         commandList.add("find policy p1 ");
         commandList.add("show policy");
+        commandList.add("show policy ");
         commandList.add("show all   policies");
         commandList.add("show  all   policy");
 
@@ -113,6 +115,8 @@ public class HintFinder {
 
             if (command.trim().endsWith("p1"))
                 assert m.group(4).equals("p1");
+            else
+                assert m.group(4) == null;
         }
 
 

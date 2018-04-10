@@ -200,7 +200,8 @@ public class GraphController {
         Set<GraphEntity> graphEntities = new HashSet<>();
 
         GraphNode policyGraphNode = this.createGraphNode(policy);
-        policyGraphNode.addToData("accessType", policy.getAccessType().toString());
+        if (policy.getAccessType() != null)
+            policyGraphNode.addToData("accessType", policy.getAccessType().toString());
         graphEntities.add(policyGraphNode);
         AbstractNode from = policy.getFrom();
         if (from != null) {
