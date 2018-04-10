@@ -253,6 +253,10 @@ public class DatabaseControllerImpl {
         return this.policyMap.values();
     }
 
+    public Collection<Group> getAllGroups() {
+        return this.groupMap.values();
+    }
+
     public void deleteTargetPolicy(String targetId) {
         policyMap.remove(targetId);
     }

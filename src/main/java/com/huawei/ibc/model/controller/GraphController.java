@@ -85,6 +85,9 @@ public class GraphController {
             case "addGroup":
                 graphEntityList.add(this.addGroup(intentMessage));
                 return graphEntityList;
+            case "showGroup":
+                graphEntityList.addAll(this.showGroup(intentMessage));
+                return graphEntityList;
             case "addToGroup":
                 return this.addToGroup(intentMessage);
 
@@ -627,6 +630,43 @@ public class GraphController {
         return this.createGraphNode(group);
 
     }
+
+    private Collection<GraphEntity> showGroup(IntentMessage intentMessage) {
+
+        Collection<GraphEntity> entities = new LinkedList<>();
+
+        String name = intentMessage.getParamValue("name");
+        if (name != null) {
+
+            com.huawei.ibc.model.db.node.Group group = databaseController.getGroup(name);
+            entities.add(this.createGraphNode(group));
+            entities.addAll(this.getGroupMembers(group));
+
+
+        } else {
+
+            for (com.huawei.ibc.model.db.node.Group group : databaseController.getAllGroups()) {
+                entities.add(this.createGraphNode(group));
+                entities.addAll(this.getGroupMembers(group));
+            }
+
+        }
+
+        return entities;
+    }
+
+    private Collection<GraphEntity> getGroupMembers(com.huawei.ibc.model.db.node.Group group) {
+
+        Collection<GraphEntity> entities = new LinkedList<>();
+        for (AbstractNode node : group.getNodeSet()) {
+            entities.add(this.createGraphNode(node));
+            entities.add(this.createGraphEdge(group.getId(),node.getId()));
+        }
+
+        return entities;
+
+    }
+
 
     private List<GraphEntity> addToGroup(IntentMessage intentMessage) {
 

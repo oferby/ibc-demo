@@ -10,7 +10,7 @@ import java.util.Set;
 public class Group extends AbstractNode{
 
     private GroupType groupType;
-    private Set<AbstractNode> nodeSet;
+    private Set<AbstractNode> nodeSet = new HashSet<>();
 
     public Group(String id, GroupType groupType) {
         super(id, NodeType.GROUP);
@@ -34,11 +34,6 @@ public class Group extends AbstractNode{
     }
 
     public void addNode(AbstractNode node){
-        if (nodeSet == null) {
-            nodeSet = new HashSet<>();
-        }
-
         nodeSet.add(node);
-
     }
 }
