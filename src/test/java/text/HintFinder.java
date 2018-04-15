@@ -1,5 +1,6 @@
 package text;
 
+import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.model.common.AccessType;
 import com.huawei.ibc.model.common.FirewallRule;
 import com.huawei.ibc.model.db.node.EthernetPort;
@@ -7,6 +8,9 @@ import com.huawei.ibc.model.db.node.Firewall;
 import com.huawei.ibc.model.db.node.PromiscuousPort;
 import com.huawei.ibc.model.db.protocol.IpPacket;
 import com.huawei.ibc.model.db.protocol.TcpPacket;
+import com.huawei.ibc.text.AntlrHintController;
+import com.huawei.ibc.text.antlr.ZtnLexer;
+import org.antlr.v4.runtime.CharStreams;
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -94,7 +98,7 @@ public class HintFinder {
     }
 
     @Test
-    public void showPolicy(){
+    public void showPolicy() {
 
         List<String> commandList = new LinkedList<>();
         commandList.add("show policy p1");
@@ -176,9 +180,9 @@ public class HintFinder {
     }
 
     @Test
-    public void testSubnet(){
+    public void testSubnet() {
 
-        SubnetUtils subnetUtils = new SubnetUtils( "192.168.1.14/24");
+        SubnetUtils subnetUtils = new SubnetUtils("192.168.1.14/24");
 
         String address = subnetUtils.getInfo().getAddress();
 
@@ -195,7 +199,6 @@ public class HintFinder {
         long addressCount = subnetUtils.getInfo().getAddressCountLong();
 
 
-
         assert inRange;
 
     }
@@ -208,7 +211,7 @@ public class HintFinder {
         commandList.add("find traffic from node1 to node2");
         commandList.add("show path to node2 from node1 ");
 
-        Map<String,String> params;
+        Map<String, String> params;
 //        Pattern p = Pattern.compile("set\\s+policy\\s+([a-z0-9]+)\\s+(allow|deny).*?(from|to)\\s+([a-z0-9]+).*?(from|to)\\s+([a-z0-9]+)");
         Pattern p = Pattern.compile("(find|show)\\s+(path|traffic)\\s+(from|to)\\s+([a-z0-9]+)\\s+(from|to)\\s+([a-z0-9]+)\\s*");
 
@@ -230,7 +233,7 @@ public class HintFinder {
     }
 
     @Test
-    public void testFirewallRule(){
+    public void testFirewallRule() {
 
         List<String> commandList = new LinkedList<>();
         commandList.add("allow traffic from web1 to db1");
@@ -243,7 +246,7 @@ public class HintFinder {
 
         for (String command : commandList) {
 
-            Map<String,String> params;
+            Map<String, String> params;
             Pattern p = Pattern.compile("(allow|deny)\\s+(all\\s+)?traffic\\s+(from|to)\\s+([a-z0-9]+)\\s+(from|to)\\s+([a-z0-9]+)\\s*");
 
             params = new HashMap<>();
@@ -255,7 +258,7 @@ public class HintFinder {
 
                 params.put("access", m.group(1));
 
-                if (m.group(2)!=null)
+                if (m.group(2) != null)
                     params.put("all", "true");
 
                 params.put(m.group(3), m.group(4));
@@ -274,7 +277,7 @@ public class HintFinder {
 
                 params.put("access", m.group(1));
 
-                if (m.group(2)!=null)
+                if (m.group(2) != null)
                     params.put("all", "true");
 
                 params.put(m.group(3), m.group(4));
@@ -292,12 +295,12 @@ public class HintFinder {
     }
 
     @Test
-    public void testFirewall(){
+    public void testFirewall() {
 
 
-        SubnetUtils subnetUtils = new SubnetUtils( "192.168.1.14/24");
+        SubnetUtils subnetUtils = new SubnetUtils("192.168.1.14/24");
 
-        SubnetUtils in = new SubnetUtils( "192.168.1.16/32");
+        SubnetUtils in = new SubnetUtils("192.168.1.16/32");
         in.setInclusiveHostCount(true);
 
         boolean inRange = subnetUtils.getInfo().isInRange(in.getInfo().getAddress());
@@ -315,21 +318,21 @@ public class HintFinder {
     }
 
     @Test
-    public void testFirewallRules(){
+    public void testFirewallRules() {
 
         Firewall firewall = new Firewall("fw1");
 
         for (int i = 50; i < 100; i++) {
-            firewall.addRule(i,null,null,null,null,null);
+            firewall.addRule(i, null, null, null, null, null);
         }
 
         for (int i = 0; i < 50; i++) {
-            firewall.addRule(i,null,null,null,null,null);
+            firewall.addRule(i, null, null, null, null, null);
         }
 
         FirewallRule last = null;
         for (FirewallRule rule : firewall.getFirewallRules()) {
-            if (last == null){
+            if (last == null) {
                 last = rule;
                 continue;
             }
@@ -343,7 +346,7 @@ public class HintFinder {
     }
 
     @Test
-    public void testFirewallRules1(){
+    public void testFirewallRules1() {
 
         IpPacket ipPacket = new IpPacket();
         ipPacket.setSourceIp("192.168.1.14");
@@ -360,7 +363,7 @@ public class HintFinder {
         try {
             firewall.rx(port, ipPacket);
             pass = false;
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
 
         }
 
@@ -372,7 +375,7 @@ public class HintFinder {
         try {
             firewall.rx(port, ipPacket);
             pass = true;
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
 
         }
 
@@ -385,7 +388,7 @@ public class HintFinder {
         try {
             firewall.rx(port, ipPacket);
             pass = false;
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
 
         }
 
@@ -403,7 +406,7 @@ public class HintFinder {
         try {
             firewall.rx(port, ipPacket);
             pass = false;
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
 
         }
 
@@ -415,16 +418,31 @@ public class HintFinder {
         try {
             firewall.rx(port, ipPacket);
             pass = true;
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
 
         }
 
         assert pass;
 
 
-
     }
 
+
+    @Test
+    public void testAntlr() {
+
+        String s = "find path from r1 to r2";
+
+        AntlrHintController hintController = new AntlrHintController();
+
+        IntentMessage intentMessage = new IntentMessage();
+        intentMessage.setIntent(s);
+
+        IntentMessage hint = hintController.getHint(intentMessage);
+
+        assert hint != null;
+
+    }
 
 
 }

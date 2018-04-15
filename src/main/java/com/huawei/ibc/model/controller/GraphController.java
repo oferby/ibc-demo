@@ -8,6 +8,7 @@ import com.huawei.ibc.model.client.Group;
 import com.huawei.ibc.model.common.*;
 import com.huawei.ibc.model.db.node.*;
 import com.huawei.ibc.service.PolicyController;
+import com.huawei.ibc.service.WebSockServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
@@ -20,7 +21,7 @@ public class GraphController {
     private int numId = 10;
 
     @Autowired
-    private SimpMessagingTemplate template;
+    WebSockServiceImpl webSockService;
 
     @Autowired
     private DatabaseControllerImpl databaseController;
@@ -173,13 +174,13 @@ public class GraphController {
         }
 
         graphEntityList.add(this.createGraphNode(policy));
-        this.sendClearLocalIntent();
+        webSockService.sendClearLocalIntent();
         return graphEntityList;
     }
 
     private Set<GraphEntity> showAllPolicies(IntentMessage intentMessage) {
 
-        this.sendClearLocalIntent();
+        webSockService.sendClearLocalIntent();
 
         if(intentMessage.getParamValue("name") !=null) {
 
@@ -244,7 +245,7 @@ public class GraphController {
         intentMessage.setStatus(IntentStatus.LOCAL);
         intentMessage.setIntent("deleteNode");
         intentMessage.addParam("id", nodeId);
-        template.convertAndSend("/topic/hint", intentMessage);
+        webSockService.sendIntent(intentMessage);
     }
 
     private void disconnectNodes(IntentMessage intentMessage) {
@@ -256,7 +257,7 @@ public class GraphController {
         intentMessage.setStatus(IntentStatus.LOCAL);
         String id = this.createGraphEdge(sourceId, targetId).getId();
         intentMessage.addParam("id", id);
-        template.convertAndSend("/topic/hint", intentMessage);
+        webSockService.sendIntent(intentMessage);
 
     }
 
@@ -264,20 +265,12 @@ public class GraphController {
 
         databaseController.deleteAll();
         addressController.clearAll();
-        this.sendClearLocalIntent();
+        webSockService.sendClearLocalIntent();
     }
-
-    private void sendClearLocalIntent() {
-        IntentMessage intentMessage = new IntentMessage();
-        intentMessage.setStatus(IntentStatus.LOCAL);
-        intentMessage.setIntent("clear");
-        template.convertAndSend("/topic/hint", intentMessage);
-    }
-
 
     private List<GraphEntity> showAll(IntentMessage intentMessage, List<GraphEntity> graphEntityList) {
 
-        this.sendClearLocalIntent();
+        webSockService.sendClearLocalIntent();
 
         Collection<AbstractDevice> devices = databaseController.getAllDevices();
         Set<GraphEdge> graphEdgeSet = new HashSet<>();
@@ -386,7 +379,7 @@ public class GraphController {
 
     private List<GraphEntity> buildDemo(IntentMessage intentMessage) {
 
-        this.sendClearLocalIntent();
+        webSockService.sendClearLocalIntent();
 
         List<GraphEntity> graphEntityList = new ArrayList<>();
         List<Router> routerList = new ArrayList<>();
@@ -530,7 +523,7 @@ public class GraphController {
 
     private List<GraphEntity> buildDemo2(IntentMessage intentMessage) {
 
-        this.sendClearLocalIntent();
+        webSockService.sendClearLocalIntent();
 
         List<GraphEntity> entities = new ArrayList<>();
 
@@ -606,7 +599,7 @@ public class GraphController {
 
     private List<GraphEntity> findPath(IntentMessage intentMessage) {
 
-        sendClearLocalIntent();
+        webSockService.sendClearLocalIntent();
 
         List<GraphEntity> entities = new ArrayList<>();
 
@@ -689,7 +682,7 @@ public class GraphController {
 
     private void sendError(String error) {
         IntentMessage intentMessage = new IntentMessage(error, IntentStatus.ERROR, null);
-        template.convertAndSend("/topic/hint", intentMessage);
+        webSockService.sendIntent(intentMessage);
     }
 
 
