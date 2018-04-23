@@ -40,7 +40,6 @@ public class IntentBuilder {
         parser.removeErrorListeners();
         parser.addErrorListener(new ZtnErrorListener());
 
-
         com.huawei.ibc.antlr4.ZtnParser.ZnContext znContext = parser.zn();
 
         this.values = znContext.values;

@@ -17,8 +17,7 @@ public class ZtnErrorListener implements ANTLRErrorListener {
 
     @Override
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
-
-        throw new RuntimeException("error");
+        throw new RuntimeException(msg);
     }
 
     @Override

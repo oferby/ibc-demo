@@ -9,8 +9,6 @@ import com.huawei.ibc.model.db.node.PromiscuousPort;
 import com.huawei.ibc.model.db.protocol.IpPacket;
 import com.huawei.ibc.model.db.protocol.TcpPacket;
 import com.huawei.ibc.text.AntlrHintController;
-import com.huawei.ibc.text.antlr.ZtnLexer;
-import org.antlr.v4.runtime.CharStreams;
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
