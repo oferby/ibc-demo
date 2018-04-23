@@ -29,7 +29,7 @@ zn  returns [Map<String,String> values]
         ;
 
 showCommand returns [Map<String,String> values]
-        : show (e=entity)? n=name
+        : show 'all'? (e=extEntity)? (n=name)?
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "show");
@@ -40,7 +40,7 @@ showCommand returns [Map<String,String> values]
 
 
 newCommand returns [Map<String,String> values]
-        : newOperator NEW? e=entity n=name
+        : newOperator NEW? e=extEntity n=name
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "new");
@@ -51,7 +51,7 @@ newCommand returns [Map<String,String> values]
 
 
 delCommand returns [Map<String,String> values]
-        : delOperator (e=entity)? n=name
+        : delOperator (e=extEntity)? n=name
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "delete");
@@ -72,7 +72,7 @@ findPathCommand returns [Map<String,String> values]
         ;
 
 connectCommand returns [Map<String,String> values]
-        : connect f=name to? and? t=name
+        : connect entity? f=name to? and? entity? t=name
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "connect");
@@ -113,11 +113,21 @@ denyCommand returns [Map<String,String> values]
             }
         ;
 
+demoCommand returns [Map<String,String> values]
+        : newOperator DEMO num
+            {
+                $values = new HashMap<String,String>();
+                $values.put("operator", "demo");
+                $values.put("num", $num.text);
+            }
+        ;
 
 operator    : show | newOperator | search ;
+extEntity   : entity | policy | group;
 from        : FROM;
 to          : TO ;
 and         : AND ;
+num         : NUMBER;
 show        : SHOW ;
 newOperator : NEW ;
 delOperator : DELETE ;
@@ -128,6 +138,8 @@ allow       : ALLOW;
 deny        : DENY;
 access      : ACCESS | TRAFFIC;
 entity      : ENTITY ;
+policy      : POLICY ;
+group       : GROUP ;
 name        : NAME ;
 searchble   : SEARCHABLE ;
 
@@ -143,8 +155,11 @@ fragment DIGIT      : [0-9]+ ;
 FROM        : 'from' ;
 TO          : 'to' ;
 AND         : 'and' ;
+NUMBER      : DIGIT;
 ACCESS      : 'access';
 TRAFFIC     : 'traffic';
+POLICY      : ( 'policy' | 'policies' ) ;
+GROUP       : 'group' 's'? ;
 SHOW        : ( 'show' |  'get' ) ;
 SEARCH      : ( 'find' | 'search' ) ;
 CONNECT     : ( 'connect' | 'attach' ) ;
@@ -153,8 +168,9 @@ NEW         : ( 'create' | 'build' | 'start' | 'add' ) ;
 DELETE      : ( 'delete' | 'remove' ) ;
 ALLOW       : ( 'allow' | 'grant' | 'permit' ) ;
 DENY        : ( 'deny' | 'revoke' ) ;
-ENTITY      : ('router' | 'vm' | 'switch' |  'firewall' | 'service' | 'application') ;
+ENTITY      : ('router' | 'vm' | 'switch' |  'firewall' | 'service' | 'application') 's'? ;
 SEARCHABLE  : ( 'path' | 'traffic' ) ;
+DEMO        : 'demo' ;
 NEWLINE     : ('\r'? '\n' | '\r')+ ;
 NAME        : ( LOWERCASE | UPPERCASE | DIGIT )+ ;
 WORD        : ( LOWERCASE | UPPERCASE | '_' )+ ;
