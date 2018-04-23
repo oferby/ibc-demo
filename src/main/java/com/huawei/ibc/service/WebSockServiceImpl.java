@@ -2,9 +2,12 @@ package com.huawei.ibc.service;
 
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.message.IntentStatus;
+import com.huawei.ibc.model.client.GraphEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
+import java.util.List;
 
 @Controller
 public class WebSockServiceImpl {
@@ -23,7 +26,6 @@ public class WebSockServiceImpl {
         template.convertAndSend("/topic/hint", intentMessage);
     }
 
-
     public void sendClearLocalIntent() {
         IntentMessage intentMessage = new IntentMessage();
         intentMessage.setStatus(IntentStatus.LOCAL);
@@ -31,5 +33,8 @@ public class WebSockServiceImpl {
         template.convertAndSend("/topic/hint", intentMessage);
     }
 
+    public void sendGraphEntities(List<GraphEntity> graphEntities) {
+        template.convertAndSend("/topic/graph",graphEntities);
+    }
 
 }

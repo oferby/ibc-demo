@@ -353,7 +353,8 @@ $(document).ready(function(){
             $('#hint').css('opacity', '0');
             getHint(true);
         } else if (event.which == 32) {
-            $("#input").val($('#hint').text() + ' ');
+            if ($('#hint').text().length > 0 )
+                $("#input").val($('#hint').text() + ' ');
         } else {
             getHint(false);
         }

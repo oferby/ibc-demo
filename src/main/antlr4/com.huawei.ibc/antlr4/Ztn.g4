@@ -20,11 +20,13 @@ zn  returns [Map<String,String> values]
         ( showCommand { $values = $showCommand.values; }
         | findPathCommand { $values = $findPathCommand.values; }
         | newCommand { $values = $newCommand.values; }
-        | delCommand { $values = $newCommand.values; }
-        | connectCommand { $values = $newCommand.values; }
-        | disconnectCommand { $values = $newCommand.values; }
-        | allowCommand { $values = $newCommand.values; }
-        | denyCommand { $values = $newCommand.values; }
+        | delCommand { $values = $delCommand.values; }
+        | connectCommand { $values = $connectCommand.values; }
+        | disconnectCommand { $values = $disconnectCommand.values; }
+        | allowCommand { $values = $allowCommand.values; }
+        | denyCommand { $values = $denyCommand.values; }
+        | demoCommand { $values = $demoCommand.values; }
+        | clearCommand { $values = $clearCommand.values; }
         )
         ;
 
@@ -43,7 +45,7 @@ newCommand returns [Map<String,String> values]
         : newOperator NEW? e=extEntity n=name
             {
                 $values = new HashMap<String,String>();
-                $values.put("operator", "new");
+                $values.put("operator", "create");
                 $values.put("name", $n.text);
                 $values.put("entity", $e.text);
             }
@@ -65,7 +67,7 @@ findPathCommand returns [Map<String,String> values]
         : ( search | show ) searchble from f=name to t=name
             {
                 $values = new HashMap<String,String>();
-                $values.put("operator", "path");
+                $values.put("operator", "findPath");
                 $values.put("from", $f.text);
                 $values.put("to", $t.text);
             }
@@ -110,6 +112,14 @@ denyCommand returns [Map<String,String> values]
                 $values.put("operator", "deny");
                 $values.put("from", $f.text);
                 $values.put("to", $t.text);
+            }
+        ;
+
+clearCommand returns [Map<String,String> values]
+        : CLEAR
+            {
+                $values = new HashMap<String,String>();
+                $values.put("operator", "clear");
             }
         ;
 
@@ -168,7 +178,8 @@ NEW         : ( 'create' | 'build' | 'start' | 'add' ) ;
 DELETE      : ( 'delete' | 'remove' ) ;
 ALLOW       : ( 'allow' | 'grant' | 'permit' ) ;
 DENY        : ( 'deny' | 'revoke' ) ;
-ENTITY      : ('router' | 'vm' | 'switch' |  'firewall' | 'service' | 'application') 's'? ;
+CLEAR       : 'clear' ;
+ENTITY      : ('router' | 'vm' | 'virtual machine' | 'ecs' | 'server'| 'switch' |  'firewall' | 'service' | 'application') 's'? ;
 SEARCHABLE  : ( 'path' | 'traffic' ) ;
 DEMO        : 'demo' ;
 NEWLINE     : ('\r'? '\n' | '\r')+ ;

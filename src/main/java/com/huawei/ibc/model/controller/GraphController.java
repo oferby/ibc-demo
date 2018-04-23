@@ -379,7 +379,7 @@ public class GraphController {
 
     private List<GraphEntity> buildDemo(IntentMessage intentMessage) {
 
-        webSockService.sendClearLocalIntent();
+//        webSockService.sendClearLocalIntent();
 
         List<GraphEntity> graphEntityList = new ArrayList<>();
         List<Router> routerList = new ArrayList<>();

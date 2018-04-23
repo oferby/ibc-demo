@@ -21,19 +21,17 @@ public class IntentWebController {
     private GraphController graphController;
 
     @MessageMapping("/getHint")
-    @SendTo("/topic/hint")
-    public IntentMessage getHint(IntentMessage intentRequest){
+//    @SendTo("/topic/hint")
+    public void getHint(IntentMessage intentRequest){
 
-        return hintController.getHint(intentRequest);
+        hintController.getHint(intentRequest);
     }
 
-
-
     @MessageMapping("/intent")
-    @SendTo("/topic/graph")
-    public List<GraphEntity> getIntent(IntentMessage intentMessage){
+//    @SendTo("/topic/graph")
+    public void getIntent(IntentMessage intentMessage){
 
-        return graphController.getGraphEntity(intentMessage);
+        graphController.getGraphEntity(intentMessage);
 
     }
 

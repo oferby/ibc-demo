@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Controller
+//@Controller
 public class SimpleHintController implements HintController {
 
     private Set<String> commandSet;
