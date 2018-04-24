@@ -25,7 +25,11 @@ public class IntentBuilder {
         this.graphController = graphController;
         this.intentMessage = intentMessage;
 
-        this.processHint();
+        if (intentMessage.getStatus().equals(IntentStatus.ENTERED))
+            this.processHint();
+
+        if (intentMessage.getStatus().equals(IntentStatus.INFO) && intentMessage.getIntent().equals("addVm"))
+            this.handleAddVmInfo();
 
     }
 
@@ -38,7 +42,14 @@ public class IntentBuilder {
         parser.removeErrorListeners();
         parser.addErrorListener(new ZtnErrorListener());
 
-        com.huawei.ibc.antlr4.ZtnParser.ZnContext znContext = parser.zn();
+        com.huawei.ibc.antlr4.ZtnParser.ZnContext znContext;
+        try {
+            znContext = parser.zn();
+        } catch (ParseException pe) {
+            pe.printStackTrace();
+            this.handleInputError();
+            return;
+        }
 
         this.values = znContext.values;
 
@@ -73,6 +84,12 @@ public class IntentBuilder {
             case "clear":
                 sockService.sendClearLocalIntent();
                 break;
+            case "setPolicy":
+                this.setPolicy();
+                break;
+            case "addToGroup":
+                this.addToGroup();
+                break;
 
             default:
                 throw new RuntimeException("unknown operator");
@@ -81,45 +98,187 @@ public class IntentBuilder {
 
     }
 
-    private void sendIntent(IntentMessage intentMessage) {
-
-        if (this.sockService != null)
-            this.sockService.sendIntent(intentMessage);
-
-    }
-
     private void showIntent() {
+
+        String name = this.values.get("name");
+        if (name != null && name.equals("all")) {
+            this.intentMessage.setIntent("showAll");
+            this.sendIntentWithReturn();
+            return;
+        }
+
+        String entity = this.values.get("entity");
+        if (entity != null) {
+
+            if (entity.equals("policy")) {
+                if (name != null) {
+                    this.intentMessage.addParam("name", name);
+                }
+
+                this.sendIntentWithReturn("showPolicies");
+                return;
+            }
+
+            if (entity.equals("group")) {
+                if (name != null) {
+                    this.intentMessage.addParam("name", name);
+                }
+
+                this.sendIntentWithReturn("showGroup");
+                return;
+
+            }
+
+        }
+
+        throw new RuntimeException("not supported");
 
     }
 
     private void createIntent() {
 
+        String entity = this.values.get("entity");
+
+        switch (entity) {
+
+            case "vm":
+                this.addVm();
+                break;
+            case "router":
+                this.sendNamedIntent("addRouter");
+                break;
+            case "switch":
+                this.sendNamedIntent("addSwitch");
+                break;
+            case "firewall":
+                this.sendNamedIntent("addFirewall");
+                break;
+            case "service":
+                this.sendNamedIntent("addService");
+                break;
+            case "policy":
+                this.sendNamedIntent("addPolicy");
+                break;
+            case "group":
+                this.sendNamedIntent("addGroup");
+                break;
+
+            case "application":
+                this.addApplication();
+                break;
+
+            default:
+                throw new RuntimeException("not supported");
+
+        }
+
+
+    }
+
+
+    private void addVm() {
+
+        if (this.values.containsKey("default")) {
+            this.sendNamedIntent("addVm");
+            return;
+        }
+
+        intentMessage.setStatus(IntentStatus.INFO);
+        intentMessage.setIntent("addVm");
+        this.handleAddVmInfo();
+
+    }
+
+    private void handleAddVmInfo() {
+
+        if (intentMessage.getParamValue("cpu") == null) {
+
+            intentMessage.addParam("type", "option");
+            intentMessage.addParam("question", "How many CPUs would you like?");
+            intentMessage.addParam("options", "1,2,4,8,16,32");
+            intentMessage.addParam("param", "cpu");
+
+        } else if (intentMessage.getParamValue("memory") == null) {
+
+            intentMessage.addParam("type", "option");
+            intentMessage.addParam("question", "How much memory do you need?");
+            intentMessage.addParam("options", "4,8,16,32");
+            intentMessage.addParam("param", "memory");
+
+        } else if (intentMessage.getParamValue("gpu") == null) {
+
+            intentMessage.addParam("type", "yesno");
+            intentMessage.addParam("question", "Do you need GPU?");
+            intentMessage.addParam("param", "gpu");
+
+        }
+
+        this.sendNamedIntent("addVm");
+
     }
 
     private void deleteIntent() {
 
+        this.sendSimpleIntent("deleteAll");
+
     }
 
     private void findPathIntent() {
+        intentMessage.addParam("from", this.values.get("from"));
+        intentMessage.addParam("to", this.values.get("to"));
+
+        this.sendIntentWithReturn("findPath");
 
     }
 
     private void connectIntent() {
 
+        intentMessage.addParam("source", this.values.get("from"));
+        intentMessage.addParam("target", this.values.get("to"));
 
+        this.sendSimpleIntent("connectNodes");
     }
 
     private void disconnectIntent() {
 
+        String to = this.values.get("to");
+        if (to != null)
+            intentMessage.addParam("target", to);
+
+        intentMessage.setIntent("disconnectNodes");
+        intentMessage.addParam("source", this.values.get("from"));
+        this.sendIntentWithReturn();
     }
 
     private void allowIntent() {
+
+        intentMessage.addParam("access", "allow");
+        this.accessIntent();
 
     }
 
     private void denyIntent() {
 
+        intentMessage.addParam("access", "deny");
+        this.accessIntent();
     }
+
+
+    private void accessIntent() {
+
+        if (this.values.containsKey("all"))
+            intentMessage.addParam("all", "true");
+
+        if (this.values.containsKey("from"))
+            intentMessage.addParam("from", values.get("from"));
+
+        if (this.values.containsKey("to"))
+            intentMessage.addParam("to", values.get("to"));
+
+        this.sendSimpleIntent("addFirewallRule");
+
+    }
+
 
     private void demoIntent() {
 
@@ -142,9 +301,62 @@ public class IntentBuilder {
         sockService.sendGraphEntities(graphEntities);
     }
 
-    private void addVm() {
+
+    private void addApplication() {
+
+        throw new RuntimeException("not implemented");
 
     }
 
+    private void setPolicy(){
+
+        intentMessage.addParam("name", this.values.get("name"));
+        intentMessage.addParam("operation", this.values.get("rights"));
+        intentMessage.addParam("from", this.values.get("to"));
+        intentMessage.addParam("to", this.values.get("to"));
+        this.sendIntentWithReturn("setPolicy");
+
+    }
+
+    private void addToGroup(){
+
+        intentMessage.addParam("node", this.values.get("name"));
+        intentMessage.addParam("group", this.values.get("group"));
+
+        this.sendIntentWithReturn("addToGroup");
+
+    }
+
+
+    private void sendNamedIntent(String intent) {
+        this.intentMessage.setIntent(intent);
+        String name = this.values.get("name");
+        if (name != null)
+            this.intentMessage.addParam("name", name);
+        this.sendIntentWithReturn();
+    }
+
+    private void sendSimpleIntent(String intent) {
+        intentMessage.setIntent(intent);
+        intentMessage.setStatus(IntentStatus.DONE);
+        graphController.getGraphEntity(intentMessage);
+    }
+
+    private void sendIntentWithReturn(String intent) {
+        intentMessage.setIntent(intent);
+        this.sendIntentWithReturn();
+    }
+
+    private void sendIntentWithReturn() {
+        intentMessage.setStatus(IntentStatus.DONE);
+        List<GraphEntity> graphEntities = graphController.getGraphEntity(intentMessage);
+        sockService.sendGraphEntities(graphEntities);
+
+    }
+
+
+    private void handleInputError() {
+        this.sockService.sendUnknownInput();
+    }
 
 }

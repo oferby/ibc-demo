@@ -27,18 +27,8 @@ public class Switch extends AbstractDevice implements ForwardingDevice {
         forwardingPortMap.put(packet.getSourceMac(), inPort);
 
         if (packet.getDestinationMac().isBroadcast()) {
-
-            List<ForwardingPort> portList = super.getPortList();
-
-            for (ForwardingPort port : portList) {
-                if (port.equals(inPort))
-                    continue;
-                port.tx(packet);
-                if (packet.isAck()) {
-                    return;
-                }
-            }
-
+            this.flood(inPort,packet);
+            return;
         }
 
         if (packet instanceof PathDiscoveryPacket) {
@@ -50,16 +40,25 @@ public class Switch extends AbstractDevice implements ForwardingDevice {
             return;
         }
 
-        for (ForwardingPort port : this.getPortList()) {
+        this.flood(inPort,packet);
+
+    }
+
+    private void flood(ForwardingPort inPort, IpPacket packet){
+
+        List<ForwardingPort> portList = super.getPortList();
+
+        for (ForwardingPort port : portList) {
+            if (port.equals(inPort))
+                continue;
             port.tx(packet);
             if (packet.isAck()) {
-                forwardingPortMap.put(packet.getSourceMac(), inPort);
                 return;
             }
-
         }
 
     }
+
 
     @Override
     public void tx(IpPacket packet) {

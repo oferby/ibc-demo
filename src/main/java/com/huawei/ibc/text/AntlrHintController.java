@@ -20,12 +20,10 @@ public class AntlrHintController implements HintController{
     @Override
     public IntentMessage getHint(IntentMessage intentMessage) {
 
-        if (intentMessage.getStatus() == IntentStatus.ENTERED) {
+        if (intentMessage.getStatus() == IntentStatus.ENTERED || intentMessage.getStatus() == IntentStatus.INFO) {
             return this.validateCompleteIntent(intentMessage);
         } else if (intentMessage.getStatus() == IntentStatus.HINT) {
             return null;
-        } else if (intentMessage.getStatus() == IntentStatus.INFO) {
-            return this.handleInfo(intentMessage);
         }
 
         throw new RuntimeException("not supported!");

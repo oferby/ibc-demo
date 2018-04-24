@@ -27,38 +27,53 @@ zn  returns [Map<String,String> values]
         | denyCommand { $values = $denyCommand.values; }
         | demoCommand { $values = $demoCommand.values; }
         | clearCommand { $values = $clearCommand.values; }
+        | setPolicyCommand { $values = $setPolicyCommand.values; }
+        | addToGroupCommand { $values = $addToGroupCommand.values; }
         )
         ;
 
 showCommand returns [Map<String,String> values]
-        : show 'all'? (e=extEntity)? (n=name)?
+        : show (a='all')? (e=extEntity)? (n=name)?
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "show");
-                $values.put("name", $n.text);
-                $values.put("entity", $e.text);
+                if ($n.text != null )
+                    $values.put("name", $n.text);
+                if ($e.text != null )
+                    $values.put("entity", $e.text);
+                if ($a.text != null )
+                    $values.put("name", "all");
             }
         ;
 
 
 newCommand returns [Map<String,String> values]
-        : newOperator NEW? e=extEntity n=name
+        : newOperator NEW? e=extEntity (n=name)? (d='default')?
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "create");
-                $values.put("name", $n.text);
+                if ($n.text != null )
+                    $values.put("name", $n.text);
                 $values.put("entity", $e.text);
+                if ($d.text != null )
+                    $values.put("default", "true");
             }
         ;
 
 
 delCommand returns [Map<String,String> values]
-        : delOperator (e=extEntity)? n=name
+        : delOperator (a='all' | ((e=extEntity)? n=name))
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "delete");
-                $values.put("name", $n.text);
-                $values.put("entity", $e.text);
+                if ($a.text != null )
+                    $values.put("all", "true");
+                else {
+                    $values.put("name", $n.text);
+                    if ($e.text != null)
+                        $values.put("entity", $e.text);
+                }
+
             }
         ;
 
@@ -85,23 +100,28 @@ connectCommand returns [Map<String,String> values]
         ;
 
 disconnectCommand returns [Map<String,String> values]
-        : disconnect f=name from? and? t=name
+        : disconnect f=name from? and? (t=name)?
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "disconnect");
                 $values.put("from", $f.text);
-                $values.put("to", $t.text);
+                if ($t.text != null )
+                    $values.put("to", $t.text);
 
             }
         ;
 
 allowCommand returns [Map<String,String> values]
-        : allow access from entity? f=name to entity? t=name
+        : allow (a='all')? access (from entity? f=name)? (to? entity? t=name)?
             {
                 $values = new HashMap<String,String>();
                 $values.put("operator", "allow");
-                $values.put("from", $f.text);
-                $values.put("to", $t.text);
+                if ($f.text != null )
+                    $values.put("from", $f.text);
+                if ($t.text != null )
+                    $values.put("to", $t.text);
+                if ($a.text != null )
+                    $values.put("all", "true");
             }
         ;
 
@@ -132,6 +152,29 @@ demoCommand returns [Map<String,String> values]
             }
         ;
 
+
+setPolicyCommand returns [Map<String,String> values]
+        : 'set'? policy pn=name r=rights access from f=name to t=name
+            {
+                $values = new HashMap<String,String>();
+                $values.put("operator", "setPolicy");
+                $values.put("name", $pn.text);
+                $values.put("rights", $r.text);
+                $values.put("from", $f.text);
+                $values.put("to", $t.text);
+            }
+        ;
+
+addToGroupCommand returns [Map<String,String> values]
+        : ADD n=name to group g=name
+            {
+                $values = new HashMap<String,String>();
+                $values.put("operator", "addToGroup");
+                $values.put("name", $n.text);
+                $values.put("group", $g.text);
+            }
+        ;
+
 operator    : show | newOperator | search ;
 extEntity   : entity | policy | group;
 from        : FROM;
@@ -139,13 +182,14 @@ to          : TO ;
 and         : AND ;
 num         : NUMBER;
 show        : SHOW ;
-newOperator : NEW ;
+newOperator : ( CREATE | ADD );
 delOperator : DELETE ;
 search      : SEARCH ;
 connect     : CONNECT;
 disconnect  : DISCONNECT;
 allow       : ALLOW;
 deny        : DENY;
+rights      : ALLOW | DENY ;
 access      : ACCESS | TRAFFIC;
 entity      : ENTITY ;
 policy      : POLICY ;
@@ -165,16 +209,18 @@ fragment DIGIT      : [0-9]+ ;
 FROM        : 'from' ;
 TO          : 'to' ;
 AND         : 'and' ;
+ADD         : 'add';
 NUMBER      : DIGIT;
 ACCESS      : 'access';
 TRAFFIC     : 'traffic';
+NEW         : 'new';
 POLICY      : ( 'policy' | 'policies' ) ;
 GROUP       : 'group' 's'? ;
 SHOW        : ( 'show' |  'get' ) ;
 SEARCH      : ( 'find' | 'search' ) ;
 CONNECT     : ( 'connect' | 'attach' ) ;
 DISCONNECT  : ( 'disconnect' | 'detach' ) ;
-NEW         : ( 'create' | 'build' | 'start' | 'add' ) ;
+CREATE      : ( 'create' | 'build' | 'start' ) ;
 DELETE      : ( 'delete' | 'remove' ) ;
 ALLOW       : ( 'allow' | 'grant' | 'permit' ) ;
 DENY        : ( 'deny' | 'revoke' ) ;
@@ -183,6 +229,6 @@ ENTITY      : ('router' | 'vm' | 'virtual machine' | 'ecs' | 'server'| 'switch' 
 SEARCHABLE  : ( 'path' | 'traffic' ) ;
 DEMO        : 'demo' ;
 NEWLINE     : ('\r'? '\n' | '\r')+ ;
-NAME        : ( LOWERCASE | UPPERCASE | DIGIT )+ ;
+NAME        : ( LOWERCASE | UPPERCASE | DIGIT | '_' | '-')+ ;
 WORD        : ( LOWERCASE | UPPERCASE | '_' )+ ;
 WHITESPACE  : ' ' -> skip ;

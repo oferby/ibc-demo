@@ -37,4 +37,13 @@ public class WebSockServiceImpl {
         template.convertAndSend("/topic/graph",graphEntities);
     }
 
+    public void sendUnknownInput(){
+
+        IntentMessage intentMessage = new IntentMessage();
+        intentMessage.setStatus(IntentStatus.INFO);
+        intentMessage.addParam("type", "unknownRequest");
+        intentMessage.addParam("question", "Sorry, did not understand your request. Please rephrase.");
+        template.convertAndSend("/topic/hint",intentMessage);
+    }
+
 }
