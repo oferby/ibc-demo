@@ -120,8 +120,9 @@ public class TopologyControllerImpl {
                     return;
                 }
 
+            } else {
+                return;
             }
-
 
         }
 

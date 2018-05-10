@@ -1,20 +1,24 @@
 package text;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.model.common.AccessType;
 import com.huawei.ibc.model.common.FirewallRule;
-import com.huawei.ibc.model.db.node.EthernetPort;
 import com.huawei.ibc.model.db.node.Firewall;
 import com.huawei.ibc.model.db.node.PromiscuousPort;
 import com.huawei.ibc.model.db.protocol.IpPacket;
 import com.huawei.ibc.model.db.protocol.TcpPacket;
-import com.huawei.ibc.text.AntlrHintController;
+import com.huawei.ibc.text.antlr.AntlrHintController;
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.validation.constraints.Null;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +26,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@RunWith(SpringRunner.class)
+//@RunWith(SpringRunner.class)
 public class HintFinder {
 
     @Test
@@ -442,5 +446,39 @@ public class HintFinder {
 
     }
 
+
+    @Test
+    public void testWitAi() throws IOException {
+
+        String url = "https://api.wit.ai/message";
+        String q = "q=add new ecs vm23";
+        String v = "v=20180425";
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.set("Authorization", "Bearer RFTIDYOQQFLTUZUKECEXM2AQKE4B2AJ7");
+
+        HttpEntity<String> entity = new HttpEntity<>(requestHeaders);
+
+//        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url)
+//                .queryParam("q", "add new ecs vm23")
+//                .queryParam("v", "20180425");
+//        builder.toUriString()
+//        url+"?"+q+"&"+v
+        ResponseEntity<String> result = restTemplate.exchange(url + "?" + q + "&" + v, HttpMethod.GET, entity, String.class);
+
+        System.out.println(result);
+
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(result.getBody());
+        JsonNode entities = root.path("entities");
+        JsonNode intent = root.path("intent");
+
+        assert entities.asText() != null;
+
+        System.out.println(root.asText());
+    }
 
 }

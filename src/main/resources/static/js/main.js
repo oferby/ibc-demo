@@ -263,6 +263,23 @@ function addToGraph(graphNode) {
     cy.layout({name:'breadthfirst'}).run()
 }
 
+function getHintFromWit(text) {
+
+    $.ajax({
+      url: 'https://api.wit.ai/message',
+      data: {
+        'q': text,
+        'access_token' : 'ZXSURWM4YGEVFFV6QENTBUK6PXUV2TBR'
+      },
+      dataType: 'jsonp',
+      method: 'GET',
+      success: function(response) {
+          console.log("success!", response);
+      }
+    });
+
+}
+
 function getHint(isDone) {
 
     var msg = null;
@@ -271,7 +288,6 @@ function getHint(isDone) {
                           'hint': $("#input").val(),
                           'status': 'ENTERED'
                       });
-        $("#input").val('');
     } else {
         msg  = JSON.stringify({
                            'hint': $("#input").val(),
@@ -325,41 +341,30 @@ function clearUnknown() {
 $(document).ready(function(){
     connect();
     $("#input").keyup(function(event){
-//        console.log('key pressed: ' + event.which);
-        if (event.which == 38 || event.which == 40) {
-            $("#input").val(lastCommand);
-            $('#hint').text(lastCommand);
-            return;
-        }
 
-        if ($("#input").val().length > 0) {
-            $('#hint').css('opacity', '1');
-
+        if (event.which == 13) {
             if (hasAlert)
                 clearAlert();
 
             if (hasUnknown)
                 clearUnknown();
 
-        } else {
-            $('#hint').css('opacity', '0');
-            $('#hint').text('');
-            return;
-        }
-
-        if (event.which == 13) {
             lastCommand = $("#input").val();
             $('#hint').text('') ;
             $('#hint').css('opacity', '0');
+//            getHintFromWit($("#input").val());
             getHint(true);
-        } else if (event.which == 32) {
-            if ($('#hint').text().length > 0 )
-                $("#input").val($('#hint').text() + ' ');
-        } else {
-            getHint(false);
+            $("#input").val('');
+            return;
+        }
+
+        if (event.which == 38 || event.which == 40) {
+            $("#input").val(lastCommand);
+            $('#hint').text(lastCommand);
+            return;
         }
     })
 
-    })
+})
 // 32 space
 // 13 enter

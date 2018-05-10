@@ -1,15 +1,16 @@
-package com.huawei.ibc.text;
+package com.huawei.ibc.text.antlr;
 
 import com.huawei.ibc.message.IntentMessage;
 import com.huawei.ibc.message.IntentStatus;
 import com.huawei.ibc.model.controller.GraphController;
 import com.huawei.ibc.service.WebSockServiceImpl;
+import com.huawei.ibc.text.HintController;
 import com.huawei.ibc.text.antlr.IntentBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 @Controller
-public class AntlrHintController implements HintController{
+public class AntlrHintController implements HintController {
 
     @Autowired
     private WebSockServiceImpl webSockService;
