@@ -235,8 +235,9 @@ public class IntentBuilder {
 
         intentMessage.addParam("source", this.values.get("from"));
         intentMessage.addParam("target", this.values.get("to"));
-
-        this.sendSimpleIntent("connectNodes");
+        intentMessage.setIntent("connectNodes");
+        List<GraphEntity> graphEntity = graphController.getGraphEntity(intentMessage);
+        sockService.sendGraphEntities(graphEntity);
     }
 
     private void disconnectIntent() {
